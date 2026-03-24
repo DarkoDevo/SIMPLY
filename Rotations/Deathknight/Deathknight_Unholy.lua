@@ -1,2391 +1,1184 @@
+--AMS healer no range or delay
 if not MakuluValidCheck() then return true end
 if not Makulu_magic_number == 2347956243324 then return true end
 
-if GetSpecializationInfo(GetSpecialization()) ~= 252 then return end
+local TMW 					  			= _G.TMW
+local Action 			      			= _G.Action
+local GetSpellTexture 		  			= _G.TMW.GetSpellTexture
+local Unit                              = Action.Unit
+local Create                            = Action.Create
+local Player                      		= Action.Player
+local BurstIsON                         = Action.BurstIsON
+local GetToggle				  			= Action.GetToggle
+local MultiUnits                        = Action.MultiUnits
+local AuraIsValid                       = Action.AuraIsValid
+local IsUnitEnemy                       = Action.IsUnitEnemy
+local LoC                               = Action.LossOfControl
+local GetCurrentGCD                     = Action.GetCurrentGCD
+local IsUnitFriendly                    = Action.IsUnitFriendly
+local InterruptIsValid                  = Action.InterruptIsValid
+local ACTION_CONST_STOPCAST   			= Action.Const.STOPCAST
+local ACTION_CONST_AUTOTARGET 			= Action.Const.AUTOTARGET
+local ACTION_CONST_DEATHKNIGHT_UNHOLY   = Action.Const.DEATHKNIGHT_UNHOLY
+local ActiveUnitPlates        			= MultiUnits:GetActiveUnitPlates()
+local Pet                               = LibStub("PetLibrary")
+local IsIndoors, UnitIsUnit, IsMounted, UnitThreatSituation, UnitCanAttack, IsInRaid, UnitDetailedThreatSituation, IsResting, GetItemCount, debugprofilestop = 
+_G.IsIndoors, _G.UnitIsUnit, _G.IsMounted, _G.UnitThreatSituation, _G.UnitCanAttack, _G.IsInRaid, _G.UnitDetailedThreatSituation, _G.IsResting, _G.GetItemCount, _G.debugprofilestop
 
-local FrameworkStart   = MakuluFramework.start
-local FrameworkEnd     = MakuluFramework.endFunc
-local RegisterIcon     = MakuluFramework.registerIcon
-
-local MakUnit          = MakuluFramework.Unit
-local MakSpell         = MakuluFramework.Spell
-local MakMulti         = MakuluFramework.MultiUnits
-local TableToLocal     = MakuluFramework.tableToLocal
-local MakGcd           = MakuluFramework.gcd
-local MakLists         = MakuluFramework.lists
-local ConstUnit        = MakuluFramework.ConstUnits
-local cacheContext     = MakuluFramework.Cache
-local Debounce         = MakuluFramework.debounceSpell
-local Trinket          = MakuluFramework.Trinket
-local ConstSpells      = MakuluFramework.constantSpells
-local constCell        = cacheContext:getConstCacheCell()
-
-local Aware            = MakuluFramework.Aware
-
-local Action           = _G.Action
-local ActionUnit       = Action.Unit
-local Player           = Action.Player
-local MultiUnits       = Action.MultiUnits
-local LoC = Action.LossOfControl
-
-local BossMods         = Action.BossMods
-
-local _G, setmetatable = _G, setmetatable
-
-
-local ActionID = {
-    WillToSurvive = { ID = 59752, MAKULU_INFO = { offGcd = true }  },
-    Stoneform = { ID = 20594, MAKULU_INFO = { offGcd = true }  },
-    Shadowmeld = { ID = 58984, MAKULU_INFO = { offGcd = true }  },
-    EscapeArtist = { ID = 20589, MAKULU_INFO = { offGcd = true }  },
-    GiftOfTheNaaru = { ID = 59544, MAKULU_INFO = { offGcd = true }  },
-    Darkflight = { ID = 68992, MAKULU_INFO = { offGcd = true }  },
-    BloodFury = { ID = 20572, MAKULU_INFO = { offGcd = true }  },
-    WillOfTheForsaken = { ID = 7744, MAKULU_INFO = { offGcd = true }  },
-    WarStomp = { ID = 20549, MAKULU_INFO = { offGcd = true }  },
-    Berserking = { ID = 26297, MAKULU_INFO = { offGcd = true }  },
-    ArcaneTorrent = { ID = 50613, MAKULU_INFO = { offGcd = true }  },
-    RocketJump = { ID = 69070, MAKULU_INFO = { offGcd = true }  },
-    RocketBarrage = { ID = 69041, MAKULU_INFO = { offGcd = true }  },
-    QuakingPalm = { ID = 107079, MAKULU_INFO = { offGcd = true }  },
-    SpatialRift = { ID = 256948, MAKULU_INFO = { offGcd = true }  },
-    LightsJudgment = { ID = 255647, MAKULU_INFO = { offGcd = true }  },
-    Fireblood = { ID = 265221, MAKULU_INFO = { offGcd = true }  },
-    ArcanePulse = { ID = 260364, MAKULU_INFO = { offGcd = true }  },
-    BullRush = { ID = 255654, MAKULU_INFO = { offGcd = true }  },
-    AncestralCall = { ID = 274738, MAKULU_INFO = { offGcd = true }  },
-    Haymaker = { ID = 287712, MAKULU_INFO = { offGcd = true }  },
-    Regeneratin = { ID = 291944, MAKULU_INFO = { offGcd = true }  },
-    BagOfTricks = { ID = 312411, MAKULU_INFO = { offGcd = true }  }, 
-    HyperOrganicLightOriginator = { ID = 312924, MAKULU_INFO = { offGcd = true }  }, 
-
-    DeathCoil = { ID = 47541, MAKULU_INFO = { damageType = "magic" } },  
-    DeathCoilPlayer = { ID = 98008, Texture = 237586 }, 
-    DeathCoilPet = { ID = 213690, Texture = 132179 },    
-    FesteringStrike = { ID = 85948, MAKULU_INFO = { damageType = "physical" } },
-    Defile = { ID = 152280, MAKULU_INFO = { damageType = "magic" } },
-    DeathandDecay = { ID = 43265, MAKULU_INFO = { damageType = "magic" } },
-    DeathGrip = { ID = 49576, MAKULU_INFO = { damageType = "magic" } },
-    Lichborne = { ID = 49039 },
-    DeathsAdvance = { ID = 48265 },
-    DarkCommand = { ID = 56222 },
-    RaiseAlly = { ID = 61999 },
-    PathofFrost = { ID = 3714 },
-    ChainsofIce = { ID = 45524, MAKULU_INFO = { damageType = "magic" } },
-    DeathStrike = { ID = 49998, MAKULU_INFO = { damageType = "physical" } },
-    RaiseDead = { ID = 46584 },
-    MindFreeze = { ID = 47528, MAKULU_INFO = { damageType = "magic" } },
-    AntiMagicShell = { ID = 48707 },
-    BlindingSleet = { ID = 207167, MAKULU_INFO = { damageType = "magic" } },
-    SacrificialPact = { ID = 327574 },
-    ControlUndead = { ID = 111673 },
-    IceboundFortitude = { ID = 48792 },
-    AntiMagicZone = { ID = 51052 },
-    Asphyxiate = { ID = 108194, MAKULU_INFO = { damageType = "magic" } },
-    DeathPact = { ID = 48743 },
-    WraithWalk = { ID = 212552 },
-    EmpowerRuneWeapon = { ID = 47568 },
-    AbominationLimb = { ID = 383269, MAKULU_INFO = { damageType = "magic" } },
+Action[ACTION_CONST_DEATHKNIGHT_UNHOLY] = {
+    --Alliance Racials  
+    EveryManforHimself                    = Create({ Type = "Spell", ID = 59752     }),
+	Stoneform                             = Create({ Type = "Spell", ID = 20594    	}),
+    Shadowmeld                            = Create({ Type = "Spell", ID = 58984     }),
+    EscapeArtist                          = Create({ Type = "Spell", ID = 20589     }),
+    GiftofNaaru                           = Create({ Type = "Spell", ID = 59542     }),
+	Darkflight                            = Create({ Type = "Spell", ID = 68992		}),
+    QuakingPalm                           = Create({ Type = "Spell", ID = 107079    }),
+    SpatialRift                           = Create({ Type = "Spell", ID = 256948    }),
+	LightsJudgment                        = Create({ Type = "Spell", ID = 255647	}),
+	Fireblood                             = Create({ Type = "Spell", ID = 265221	}),
+    Haymaker                              = Create({ Type = "Spell", ID = 287712    }),
+    HyperOrganicLightOriginator           = Create({ Type = "Spell", ID = 312924    }),
+    --Horde Racials
+	BloodFury                             = Create({ Type = "Spell", ID = 33697		}),
+    WilloftheForsaken                     = Create({ Type = "Spell", ID = 7744      }),
+	Canibalize                     		  = Create({ Type = "Spell", ID = 20577     }),
+    WarStomp                              = Create({ Type = "Spell", ID = 20549     }),
+	Berserking                            = Create({ Type = "Spell", ID = 26297		}),
+	ArcaneTorrent                         = Create({ Type = "Spell", ID = 28730		}),
+	PackHobGoblin                         = Create({ Type = "Spell", ID = 69046		}),
+	RocketBarrage                         = Create({ Type = "Spell", ID = 69041		}),
+	RocketJump                         	  = Create({ Type = "Spell", ID = 69070		}),
+	ArcanePulse                           = Create({ Type = "Spell", ID = 260364	}),
+	Cantrips                         	  = Create({ Type = "Spell", ID = 255661	}),
+    BullRush                              = Create({ Type = "Spell", ID = 255654    }),
+	AncestralCall                         = Create({ Type = "Spell", ID = 274738	}),
+	EmbraceoftheLoa                       = Create({ Type = "Spell", ID = 292752	}),
+	PterrordaxSwoop                       = Create({ Type = "Spell", ID = 281954	}),
+	Regeneratin                           = Create({ Type = "Spell", ID = 291944	}),
+    BagofTricks                           = Create({ Type = "Spell", ID = 312411    }),
+    MakeCamp                              = Create({ Type = "Spell", ID = 312370    }),
+    ReturntoCamp                          = Create({ Type = "Spell", ID = 312372    }),
+    RummageyourBag                        = Create({ Type = "Spell", ID = 312425    }),
+    --Misc
+    TargetEnemy                           = Create({ Type = "Spell", ID = 44603		}),
+    StopCast                              = Create({ Type = "Spell", ID = 61721		}),
+    PoolResource                          = Create({ Type = "Spell", ID = 209274	}),
+	DelayIcon                    		  = Create({ Type = "Spell", ID = 20579     }),
+    --Mythic Plus
+    Quake                                 = Create({ Type = "Spell", ID = 240447  	}),
+    Burst                                 = Create({ Type = "Spell", ID = 240443	}),
+    GrievousWound                         = Create({ Type = "Spell", ID = 240559	}),
+    Necrotic                              = Create({ Type = "Spell", ID = 209858	}),
+    --AntiFakeStuff
+	AntiFakeKick                         = Create({ Type = "SpellSingleColor", ID = 47528,  Hidden = true,		Color = "GREEN"			, Desc = "[2] AntiFakeKick",     QueueForbidden = true	}),
+	AntiFakeCC						     = Create({ Type = "SpellSingleColor", ID = 207167, Hidden = true,		Color = "BLUE"			, Desc = "[1] AntiFakeCC",       QueueForbidden = true	}), --Blinding Sleet
+	AntiFakeCC1						     = Create({ Type = "SpellSingleColor", ID = 221562, Hidden = true,		Color = "LIGHT BLUE"	, Desc = "[1] AntiFakeCC1",      QueueForbidden = true	}), --Asphyxiate 
+	AntiFakeCC2						     = Create({ Type = "SpellSingleColor", ID = 49576,  Hidden = true,		Color = "YELLOW"		, Desc = "[1] AntiFakeCC2",      QueueForbidden = true	}), --Death Grip
+	AntiFakeCC3						     = Create({ Type = "SpellSingleColor", ID = 47476,  Hidden = true,		Color = "WHITE"			, Desc = "[1] AntiFakeCC3",      QueueForbidden = true	}), --Strangulate 
+	AntiFakeCC4						     = Create({ Type = "SpellSingleColor", ID = 91809,  Hidden = true,		Color = "RED"			, Desc = "[1] AntiFakeCC4",      QueueForbidden = true	}), --Leap 
+	AntiFakeCC5						     = Create({ Type = "SpellSingleColor", ID = 91800,  Hidden = true,		Color = "PINK"			, Desc = "[1] AntiFakeCC5",      QueueForbidden = true	}), --Gnaw 
     
-    SoulReaper = { ID = 343294, MAKULU_INFO = { damageType = "magic" } },
-    ClawingShadows = { ID = 207311, MAKULU_INFO = { damageType = "magic", ignoreResource = true } },
-    ScourgeStrike = { ID = 55090, MAKULU_INFO = { damageType = "magic", ignoreResource = true } },
-    Outbreak = { ID = 77575, MAKULU_INFO = { damageType = "magic" } },
-    DarkTransformation = { ID = 63560, MAKULU_INFO = { damageType = "magic" } }, 
-    Epidemic = { ID = 207317, MAKULU_INFO = { damageType = "magic" } },
-    Apocalypse = { ID = 275699, MAKULU_INFO = { damageType = "magic" } },
-    VileContagion = { ID = 390279, MAKULU_INFO = { damageType = "magic" } },
-    RaiseAbomination = { ID = 455395, MAKULU_INFO = { damageType = "magic" } },
-    ArmyoftheDead = { ID = 42650, MAKULU_INFO = { damageType = "magic" } },
-    SummonGargoyle = { ID = 49206, MAKULU_INFO = { damageType = "magic" } },
-    SummonGargoylePet = { ID = 212551, MAKULU_INFO = { damageType = "magic" } },
-    SummonSkeletalArcher = { ID = 49207, MAKULU_INFO = { damageType = "magic" } },
-    UnholyAssault = { ID = 207289, MAKULU_INFO = { damageType = "magic" } },
-    Leap = { ID = 47482, MAKULU_INFO = { damageType = "physical" } },
-    Gnaw = { ID = 47481, MAKULU_INFO = { damageType = "physical" } },
-    Huddle = { ID = 47484 },
-    DeathCharge = { ID = 444347 },
+    -- Abilities
+    DeathAndDecay                         = Create({ Type = "Spell", ID = 43265 }),
+    -- DeathCoil                             = Create({ Type = "Spell", ID = 47541 }),
+	DeathCoil							  = Create({ Type = "Spell", ID = 47541, Macro = "/cast Death Coil" }),
+    -- Talents
+    AbominationLimb                       = Create({ Type = "Spell", ID = 383269 }),
+    Asphyxiate                            = Create({ Type = "Spell", ID = 221562 }),
+    ChainsofIce                           = Create({ Type = "Spell", ID = 45524 }),
+    CleavingStrikes                       = Create({ Type = "Spell", ID = 316916 }),
+    DeathStrike                           = Create({ Type = "Spell", ID = 49998 }),
+    EmpowerRuneWeapon                     = Create({ Type = "Spell", ID = 47568 }),
+    IcyTalons                             = Create({ Type = "Spell", ID = 194878 }),
+    RaiseDead                             = Create({ Type = "Spell", ID = 46584 }),
+    RunicAttenuation                      = Create({ Type = "Spell", ID = 207104 }),
+    SacrificialPact                       = Create({ Type = "Spell", ID = 327574 }),
+    SoulReaper                            = Create({ Type = "Spell", ID = 343294 }),
+    UnholyGround                          = Create({ Type = "Spell", ID = 374265 }),
+    -- Buffs
+    AbominationLimbBuff                   = Create({ Type = "Spell", ID = 383269, Hidden = true }),
+    DeathAndDecayBuff                     = Create({ Type = "Spell", ID = 188290 }),
+    DeathsDueBuff                         = Create({ Type = "Spell", ID = 324165 }),
+    EmpowerRuneWeaponBuff                 = Create({ Type = "Spell", ID = 47568, Hidden = true }),
+    IcyTalonsBuff                         = Create({ Type = "Spell", ID = 194879 }),
+    UnholyStrengthBuff                    = Create({ Type = "Spell", ID = 53365 }),
+    -- Debuffs
+    BloodPlagueDebuff                     = Create({ Type = "Spell", ID = 55078 }),
+    FrostFeverDebuff                      = Create({ Type = "Spell", ID = 55095 }),
+    VirulentPlagueDebuff                  = Create({ Type = "Spell", ID = 191587 }),
+    -- Interrupts
+    MindFreeze                            = Create({ Type = "Spell", ID = 47528 }),
+    -- Custom
+    Pool                                  = Create({ Type = "Spell", ID = 999910 }),
+    -- Abilities
+    -- Talents
+    Apocalypse                            = Create({ Type = "Spell", ID = 275699 }),
+    ArmyoftheDamned                       = Create({ Type = "Spell", ID = 276837 }),
+    ArmyoftheDead                         = Create({ Type = "Spell", ID = 42650 }),
+    BurstingSores                         = Create({ Type = "Spell", ID = 207264 }),
+    ClawingShadows                        = Create({ Type = "Spell", ID = 207311, Texture = 61016 }),
+    CoilofDevastation                     = Create({ Type = "Spell", ID = 390270 }),
+    CommanderoftheDead                    = Create({ Type = "Spell", ID = 390259 }),
+    DarkTransformation                    = Create({ Type = "Spell", ID = 63560 }),
+    Defile                                = Create({ Type = "Spell", ID = 152280 }),
+    DefileDebuff                          = Create({ Type = "Spell", ID = 218100, Hidden = true }),
+    Epidemic                              = Create({ Type = "Spell", ID = 207317 }),
+    EternalAgony                          = Create({ Type = "Spell", ID = 390268 }),
+    FesteringStrike                       = Create({ Type = "Spell", ID = 85948 }),
+    Festermight                           = Create({ Type = "Spell", ID = 377590 }),
+	FesteringScythe					      = Create({ Type = "Spell", ID = 455397 }),
+    GhoulishFrenzy                        = Create({ Type = "Spell", ID = 377587 }),
+    ImprovedDeathCoil                     = Create({ Type = "Spell", ID = 377580 }),
+    InfectedClaws                         = Create({ Type = "Spell", ID = 207272 }),
+    Morbidity                             = Create({ Type = "Spell", ID = 377592 }),
+    Outbreak                              = Create({ Type = "Spell", ID = 77575 }),
+    Pestilence                            = Create({ Type = "Spell", ID = 277234 }),
+    Plaguebringer                         = Create({ Type = "Spell", ID = 390175 }),
+    RottenTouch                           = Create({ Type = "Spell", ID = 390275 }),
+    ScourgeStrike                         = Create({ Type = "Spell", ID = 55090, Texture = 61016  }),
+    SummonGargoyle                        = Create({ Type = "Spell", ID = 49206 }),
+    Superstrain                           = Create({ Type = "Spell", ID = 390283 }),
+    UnholyAssault                         = Create({ Type = "Spell", ID = 207289 }),
+    UnholyBlight                          = Create({ Type = "Spell", ID = 460448 }),
+    UnholyCommand                         = Create({ Type = "Spell", ID = 316941 }),
+    UnholyPact                            = Create({ Type = "Spell", ID = 319230 }),
+    VileContagion                         = Create({ Type = "Spell", ID = 390279 }),
+	UnyieldingWill						  = Create({ Type = "Spell", ID = 457574 }),
+    -- Buffs
+    FestermightBuff                       = Create({ Type = "Spell", ID = 377591 }),
+    PlaguebringerBuff                     = Create({ Type = "Spell", ID = 390178 }),
+    RunicCorruptionBuff                   = Create({ Type = "Spell", ID = 51460 }),
+    SuddenDoomBuff                        = Create({ Type = "Spell", ID = 81340 }),
+    UnholyAssaultBuff                     = Create({ Type = "Spell", ID = 207289, Hidden = true }),
+    -- Debuffs
+    FesteringWoundDebuff                  = Create({ Type = "Spell", ID = 194310 }),
+    UnholyBlightDebuff                    = Create({ Type = "Spell", ID = 115994 }),
+	PetChainsDebuff					      = Create({ Type = "Spell", ID = 444826 }),
+    
+    --Manually Added
+	DeathPact						  	  = Create({ Type = "Spell", ID = 48743	 }),
+	IceboundFortitude					  = Create({ Type = "Spell", ID = 48792	 }),
+	AntiMagicShell						  = Create({ Type = "Spell", ID = 48707, Texture = 24261, }),
+	AntiMagicShellSW					  = Create({ Type = "Spell", ID = 410358, Texture = 24261, }),
+	DarkSuccor							  = Create({ Type = "Spell", ID = 178819 }),
+	DeathGrip						  	  = Create({ Type = "Spell", ID = 49576  }),
+	AntiMagicZone						  = Create({ Type = "Spell", ID = 51052  }),
+	DeathsAdvance						  = Create({ Type = "Spell", ID = 48265  }),
+	WraithWalk						  	  = Create({ Type = "Spell", ID = 212552  }),
+	Lichborne						  	  = Create({ Type = "Spell", ID = 49039	 }),
+	DeathCoilPlayer						  = Create({ Type = "Spell", ID = 47541, Hidden = true, Texture = 98008 }),
+	BlindingSleet						  = Create({ Type = "Spell", ID = 207167 }),
+	RaiseAlly						  	  = Create({ Type = "Spell", ID = 61999 }),
+	DeathCharge						  	  = Create({ Type = "Spell", ID = 444347, FixedTexture = 237561, }),
+	DeathChargeTalent				  	  = Create({ Type = "Spell", ID = 444010, FixedTexture = 237561, }),
+    
+    --Pvp Talents
+	DarkSimulacrum					  	  = Create({ Type = "Spell", ID = 77606  }),
+	Reanimation					  	      = Create({ Type = "Spell", ID = 210128 }),
+	RaiseAbomination					  = Create({ Type = "Spell", ID = 455395 }),
+	Strangulate						  	  = Create({ Type = "Spell", ID = 47476	 }),
+	Doomburst						      = Create({ Type = "Spell", ID = 356512 }),
+	GroundingTotem						  = Create({ Type = "Spell", ID = 8178, Hidden = true }),
+	EyeBeam						  		  = Create({ Type = "Spell", ID = 198013, Hidden = true }),
+	AbyssalStare						  = Create({ Type = "Spell", ID = 452497, Hidden = true }),
+	CelestialConduit					  = Create({ Type = "Spell", ID = 443028, Hidden = true }),
+	CelestialConduit2					  = Create({ Type = "Spell", ID = 443038, Hidden = true }),
+	SpellWarden						  	  = Create({ Type = "Spell", ID = 410320, Hidden = true }), 
+    
+	Garrote						  		  = Create({ Type = "Spell", ID = 703, Hidden = true }),
+	CheapShot						  	  = Create({ Type = "Spell", ID = 1833, Hidden = true }),
+    
+    --Pet
+	Gnaw						  	  	  = Create({ Type = "Spell", ID = 47481	 }),
+	Leap						  	  	  = Create({ Type = "Spell", ID = 47482	 }),
+    
+	AsphyxiateFocus						  = Create({ Type = "Spell", ID = 221562, Hidden = true, Texture = 260364 }),
+	DeathGripFocus						  = Create({ Type = "Spell", ID = 49576, Hidden = true, Texture = 255654 }),
+	StrangulateFocus					  = Create({ Type = "Spell", ID = 255654, Hidden = true, Texture = 287712 }),
+    
+	PvpTrinket1 		  				  = Create({ Type = "Trinket", ID = 216369}),
+	PvpTrinket2 		  				  = Create({ Type = "Trinket", ID = 216282}),
+    
+	FistofFury1						  	  = Create({ Type = "Spell", ID = 113656, Hidden = true }),
+	FistofFury2						  	  = Create({ Type = "Spell", ID = 117418, Hidden = true }),
+	WailingArrow						  = Create({ Type = "Spell", ID = 392060, Hidden = true }),
+    
+	BloodforgeArmor						  = Create({ Type = "Spell", ID = 410305, Hidden = true }),
+    
+} --if NoGlobalsAvialable() or NoInterfaceAvialable() then return true end
 
-    Reanimation = { ID = 210128 },
-    Strangulate = { ID = 47476 },
-    DarkSimulacrum = { ID = 77606 },
+--#####################################################################################################################################################################################
 
-    VampiricStrike = { ID = 433895, MAKULU_INFO = { damageType = "magic", ignoreResource = true } },
+local A 									= setmetatable(Action[ACTION_CONST_DEATHKNIGHT_UNHOLY], { __index = Action })
 
-    UnholyEndurance = { ID = 389682, Hidden = true },
-    ImprovedDeathCoil = { ID = 377580, Hidden = true },
-    CoilofDevastation = { ID = 390270, Hidden = true },
-    Festermight = { ID = 377590, Hidden = true },
-    BurstingSores = { ID = 207264, Hidden = true },
-    InfectedClaws = { ID = 207272, Hidden = true },
-    ArmyoftheDamned = { ID = 276837, Hidden = true },
-    RottenTouch = { ID = 390275, Hidden = true }, 
-    SuddenDoom = { ID = 49530, Hidden = true },
-    CommanderoftheDead = { ID = 390259, Hidden = true }, 
-    Plaguebringer = { ID = 390175, Hidden = true }, 
-    Superstrain = { ID = 390283, Hidden = true },
-    EbonFever = { ID = 207269, Hidden = true },
-    UnholyGround = { ID = 374265, Hidden = true },
-    MagusoftheDead = { ID = 390196, Hidden = true },
-    Morbidity = { ID = 377592, Hidden = true },
-    HarbingerofDoom = { ID = 276023, Hidden = true },
-    GiftoftheSanlayn = { ID = 434152, Hidden = true },
-    UnholyBlight = { ID = 460448, Hidden = true },
-    DoomedBidding = { ID = 455386, Hidden = true },
-    MenacingMagus = { ID = 455135, Hidden = true },
-    FrenziedBloodthirst = { ID = 434075, Hidden = true },
-    HungeringThirst = { ID = 444037, Hidden = true },
-    VampiricStrikeTalent = { ID = 433901, Hidden = true },
-    DeathChargeTalent = { ID = 444010, Hidden = true },
+local mouseover	 							= "mouseover"
+local focus		 							= "focus"
+local target	 							= "target"
+local player	 							= "player"
+local pet	 								= "pet"
 
-    Healthstone = { Type = "Item", ID = 5512, Hidden = true },
-    TemperedPotion1 = { Type = "Potion", ID = 212263, Texture = 176108, Hidden = true },
-    TemperedPotion2 = { Type = "Potion", ID = 212264, Texture = 176108, Hidden = true },
-    TemperedPotion3 = { Type = "Potion", ID = 212265, Texture = 176108, Hidden = true },
-    PotionofUnwaveringFocus1 = { Type = "Potion", ID = 212257, Texture = 176108, Hidden = true },
-    PotionofUnwaveringFocus2 = { Type = "Potion", ID = 212258, Texture = 176108, Hidden = true },
-    PotionofUnwaveringFocus3 = { Type = "Potion", ID = 212259, Texture = 176108, Hidden = true },
-    FrontlinePotion = { Type = "Potion", ID = 212262, Texture = 176108, Hidden = true },
-    AlgariManaPotion = { Type = "Potion", ID = 212241, Texture = 176108, Hidden = true },
-
-    DeathandDecayCursor = { ID = 43265, FixedTexture = 133667,  Macro = "/cast [@cursor] spell:thisID" }, -- Universal1
-    AsphyxiateFocus = { ID = 221562, FixedTexture = 133663,  Macro = "/cast [@focus] spell:thisID" }, -- Universal2
-    DeathGripFocus = { ID = 49576, FixedTexture = 133658,  Macro = "/cast [@focus] spell:thisID" }, -- Universal3
+local Temp                                  = {
+    TotalAndPhys                            = {"TotalImun", "DamagePhysImun"},
+    TotalAndCC                              = {"TotalImun", "CCTotalImun"},
+    TotalAndPhysKick                        = {"TotalImun", "DamagePhysImun", "KickImun"},
+    TotalAndPhysAndCC                       = {"TotalImun", "DamagePhysImun", "CCTotalImun"},
+    TotalAndPhysAndStun                     = {"TotalImun", "DamagePhysImun", "StunImun"},
+    TotalAndPhysAndCCAndStun                = {"TotalImun", "DamagePhysImun", "CCTotalImun", "StunImun"},
+    TotalAndMagAndCCAndStun                 = {"TotalImun", "DamageMagicImun", "CCTotalImun", "StunImun"},
+    TotalAndMag                             = {"TotalImun", "DamageMagicImun"},
+    TotalAndMagKick                         = {"TotalImun", "DamageMagicImun", "KickImun"},
+    DisablePhys                             = {"TotalImun", "DamagePhysImun", "Freedom", "CCTotalImun"},
+    DisableMag                              = {"TotalImun", "DamageMagicImun", "Freedom", "CCTotalImun"},
+    IsSlotTrinketBlocked                    = {},
+    BerserkerRageLoC                        = {"FEAR", "INCAPACITATE"},
 }
 
-local A, M = MakuluFramework.CreateActionVar(ActionID)
-A = setmetatable(A, { __index = Action })
+--################################################################################################################################################################################################################
 
-Action[ACTION_CONST_DEATHKNIGHT_UNHOLY] = A
-
-TableToLocal(M, getfenv(1))
-Aware:enable()
-
-local player = ConstUnit.player
-local target = ConstUnit.target
-local focus = ConstUnit.focus
-local mouseover = ConstUnit.mouseover
-local pet = ConstUnit.pet
-local arena1 = ConstUnit.arena1
-local arena2 = ConstUnit.arena2
-local arena3 = ConstUnit.arena3
-local party1 = ConstUnit.party1
-local party2 = ConstUnit.party2
-local party3 = ConstUnit.party3
-local party4 = ConstUnit.party4
-local healer = ConstUnit.healer
-local enemyHealer = ConstUnit.enemyHealer
-
-local gs = {}
-
-local buffs = {
-    arenaPreparation = 32727,
-    powerInfusion = 10060,
-    suddenDoom = 81340,
-    essenceOfTheBloodQueen = 433925,
-    unholyAssault = 207289,
-    deathAndDecay = 188290,
-    unholyStrength = 53365,
-    festermight = 377591,
-    giftOfTheSanlayn = 434153,
-    darkTransformation = 63560,
-    commanderOfTheDead = 390260,
-    inflictionOfSorrow = 460049,
-    festeringScythe = 458123,
-    aFeastOfSouls = 440861,
-    runicCorruption = 51460,
-    deathsAdvance = 48265,
-    deathCharge = 444347,
-    lichborne = 49039,
-}
-
-local debuffs = {
-    festeringWound = 194310,
-    virulentPlague = 191587,
-    rottenTouch = 390276,
-    frostFever = 55095,
-    bloodPlague = 55078,
-    chainsOfIceTrollbane = 444826,
-    deathRot = 377540,
-}
-
-local interrupts = {
-    {spell = MindFreeze},
-    {spell = Asphyxiate, isCC = true},
-    {spell = BlindingSleet, isCC = true, aoe = true, distance = 3},
-}
-
-local function num(val)
-    if val then return 1 else return 0 end
+local function RotationsVariables()
+    --Default Variables
+	isMoving 						= Player:IsMoving()
+	isStaying   					= Player:IsStaying()
+	combatTime  					= Unit(player):CombatTime()
+	movingTime  					= Player:IsMovingTime()
+	stayingTime						= Player:IsStayingTime()
+	PlayerHealth					= Unit(player):HealthPercent()
+	IsInMeleeRange     				= Unit(target):GetRange() < 5 --A.FesteringStrike:IsSpellInRange("target")
+    
+	pvp_Toggle 						= GetToggle(2, "Checkbox4") and (A.Zone == "arena" or A.Zone == "pvp")
 end
 
-local function enemiesInRange(debuff, dur, spell)
-    local cacheKey = debuff and ("enemiesInRangeWithDebuff_" .. tostring(debuff)) or "enemiesInRange_" .. tostring(spell)
-    
-    return constCell:GetOrSet(cacheKey, function() 
-        local activeEnemies = MultiUnits:GetActiveUnitPlates()
-        local count = 0
-        local dur = dur or 0
-        local spell = spell or DeathStrike
+--#####################################################################################################################################################################################
+
+local function tempSpellCooldown(spellID)
+    local cooldownInfo = C_Spell.GetSpellCooldown(spellID)
+    if cooldownInfo and cooldownInfo.isEnabled then
+        local start = cooldownInfo.startTime
+        local duration = cooldownInfo.duration
+        local modRate = cooldownInfo.modRate or 1
         
-        for enemyGUID in pairs(activeEnemies) do
-            local enemy = MakUnit:new(enemyGUID)
-            if spell:InRange(enemy) and not enemy:IsTotem() and not enemy.isPet then
-                if (player.inCombat and enemy.inCombat) or (not player.inCombat and not enemy.inCombat) or enemy.isDummy then
-                    if debuff and enemy:DebuffRemains(debuff, true) > dur then
-                        count = count + 1
-                    elseif not debuff then
-                        count = count + 1
-                    end
-                end
+        if duration > 0 then
+            local remaining = (start + duration - GetTime()) / modRate
+            return remaining
+        else
+            return 0 -- No cooldown
+        end
+    end
+    return nil -- Spell is not usable or invalid spell ID
+end
+
+
+-- Yanked stuff from zerker globals
+local function NeedStopCast()
+    if GetToggle(1, "StopCast") and Unit("player"):IsCastingRemains() > 0 then
+        
+        local playerHasQuakingDebuff = Unit("player"):HasDeBuffs(240447)
+        local targetCastingGrimrail = Unit("target"):IsCastingRemains(161087)
+        if playerHasQuakingDebuff > 0 and playerHasQuakingDebuff < 0.5 then
+            return true
+        elseif targetCastingGrimrail > 0 and targetCastingGrimrail < 0.5 then
+            return true
+        end
+    end
+    
+    return false
+end
+
+local function CanSlow()
+    if Unit("target"):IsPlayer() and Unit("target"):GetMaxSpeed() >= 100 and Unit("target"):IsDebuffDown("Slowed") then
+        for buffID in pairs(SlowImmuneBuffs) do
+            if Unit("target"):IsBuffUp(buffID) then
+                return false
             end
         end
-        
-        return count
-    end)
+        return true
+    end
+    return false
 end
 
-local function activeEnemies()
-    return enemiesInRange(nil, nil, MindFreeze)
+local function GetCastPercentage(unitID)
+    local name, _, _, startTime, endTime, _, _, notInterrupt = UnitCastingInfo(unitID)
+    if not name then
+        name, _, _, startTime, endTime, _, notInterrupt = UnitChannelInfo(unitID)
+    end
+    if name then
+        local currentTime = GetTime() * 1000
+        local elapsedTime = currentTime - startTime
+        local totalDuration = endTime - startTime
+        return (elapsedTime / totalDuration) * 100, notInterrupt
+    else
+        return 0, notInterrupt
+    end
 end
 
-local function lowestWound()
-    local cacheKey = "lowestWound"
+--Function to check if the unit is attackable with physical damage
+local function CanAttackTargetPhysical(unitID)
+    return Unit(unitID):IsBuffDown(Full_Immune_Buffs) and Unit(unitID):IsDebuffDown(Full_Immune_DeBuffs) and Unit(unitID):IsBuffDown(Phys_Immune_Buffs)
+end
+
+--########################################################################################################################################################################################################################################################################################################################################################################
+
+--Function to check if the unit is attackable magical damage
+local function CanAttackTargetMagical(unitID)
+    return Unit(unitID):IsBuffDown(Full_Immune_Buffs) and Unit(unitID):IsDebuffDown(Full_Immune_DeBuffs) and Unit(unitID):IsBuffDown(Magic_Immune_Buffs)
+end
+
+--Specified Kick function depending on damage type (Physical)
+local function CanKickArenaPhysical(unitID)
+    local raceCar = GetToggle(2, "RaceCar")
+    local percentRc = 35
+    if raceCar then percentRc = 28 end
+    local percent, notInterrupt = GetCastPercentage(unitID)
+    return A.InterruptIsValid(unitID, "BerserkerPvpInterrupts", true, true) and not notInterrupt and CanAttackTargetPhysical(unitID) and Unit(unitID):IsBuffDown(Kick_Immune_Buffs) and ((percent > percentRc) or (UnitChannelInfo(unitID) and percent > 15))
+end
+
+--Specified Kick function depending on damage type (Magical)
+local function CanKickArenaMagical(unitID)
+    local raceCar = GetToggle(2, "RaceCar")
+    local percentRc = 35
+    if raceCar then percentRc = 28 end
+    local percent, notInterrupt = GetCastPercentage(unitID)
+    return A.InterruptIsValid(unitID, "BerserkerPvpInterrupts", true, true) and not notInterrupt and CanAttackTargetMagical(unitID) and Unit(unitID):IsBuffDown(Kick_Immune_Buffs) and ((percent > percentRc) or (UnitChannelInfo(unitID) and percent > 15))
+end
+
+local function CCHealerInArenaDps(unitID, threshold, ccDur, ccType, castOnlyOnHealer, castOnTarget)
+    local healthThresholdMet = (Unit("arena1"):IsExists() and Unit("arena1"):HealthPercent() <= threshold) or (Unit("arena2"):IsExists() and Unit("arena2"):HealthPercent() <= threshold) or (Unit("arena3"):IsExists() and Unit("arena3"):HealthPercent() <= threshold)
+    local isInCC = Unit(unitID):InCC() <= ccDur
+    local drThresholdMet = Unit(unitID):GetDR(ccType) >= 50
+    local isHealer = Unit(unitID):IsHealer()
+    local isTarget = UnitIsUnit(unitID, "target")
+    local noOtherCC = Unit(unitID):HasDeBuffs(Active_CC_Debuffs) < 1 and Unit(unitID):IsBuffDown(CC_Immune_Buffs)
     
-    return constCell:GetOrSet(cacheKey, function() 
-        local activeEnemies = MultiUnits:GetActiveUnitPlates()
-        local lowestDuration = math.huge
-        local lowestEnemy = nil
-
-        for enemyGUID in pairs(activeEnemies) do
-            local enemy = MakUnit:new(enemyGUID)
-            if DeathStrike:InRange(enemy) and not enemy:IsTotem() and not enemy.isPet then
-                local duration = enemy:DebuffRemains(debuffs.festeringWound, true)
-                if duration and duration > 0 then
-                    if duration < lowestDuration then
-                        lowestDuration = duration
-                        lowestEnemy = enemy
-                    end
-                end
-            end
-        end
-        
-        return lowestEnemy
-    end)
-end
-
-local function shouldDefensive()
-    local defensiveActive = player:BuffFrom(MakLists.Defensive) or UnitGetTotalAbsorbs("player") >= player.maxHealth * 0.15
-
-    return makShouldDefensive() < 2000 and not defensiveActive
-end
-
-local function orbsActive()
-    local cacheKey = "orbsActive"
-    
-    return constCell:GetOrSet(cacheKey, function() 
-        local activeEnemies = MultiUnits:GetActiveUnitPlates()
-        
-        for enemyGUID in pairs(activeEnemies) do
-            local enemy = MakUnit:new(enemyGUID)
-            local enemyCast = enemy.castInfo
-            local orb = enemyCast and enemyCast.spellId == 461904
-            if DeathGrip:InRange(enemy) and orb then
+    if noOtherCC and (healthThresholdMet and isInCC and drThresholdMet) then
+        if (castOnlyOnHealer and isHealer) or (not castOnlyOnHealer and (isHealer or not isHealer)) then
+            if (castOnTarget and (isTarget or not isTarget)) or (not castOnTarget and not isTarget) then
                 return true
             end
         end
-        
-        return false
-    end)
-end
-
-local function fightRemains()
-    local cacheKey = "fightRemains"
+    end
     
-    return constCell:GetOrSet(cacheKey, function()
-        local _, instanceType = GetInstanceInfo()
-        if instanceType == "raid" then
-        
-            local activeEnemies = MultiUnits:GetActiveUnitPlates()
-            local highest = 0 
-            
-            for enemyGUID in pairs(activeEnemies) do
-                local enemy = MakUnit:new(enemyGUID)
-                if enemy.ttd > 0 and enemy.ttd > highest then
-                    highest = enemy.ttd
-                end
-            end
-            
-            return highest
-        else
-            return 99999
-        end
-    end)
+    return false
 end
 
-local function runesReady()
-    local currentTime = GetTime()
-    local count = 0
+--#####################################################################################################################################################################################
 
-    for runeSlot = 1, 6 do
-        local startTime, duration, isRuneReady = GetRuneCooldown(runeSlot)
-        
-        if isRuneReady then
-            count = count + 1
-        else
-            local timeUntilReady = (startTime + duration) - currentTime
-            if timeUntilReady <= 0.4 then
-                count = count + 1
-            end
+local function GnawAsStun(unitID)
+    local castingSpells = {
+        A.EyeBeam.ID,
+        A.AbyssalStare.ID,
+        A.CelestialConduit.ID,
+        A.CelestialConduit2.ID,
+        A.WailingArrow.ID
+    }
+    
+    local unit = Unit(unitID)
+    
+    for _, spellID in ipairs(castingSpells) do
+        if unit:IsCastingRemains(spellID) > 0 then
+            return true
         end
     end
-
-    return count
-end
-
-local function autoTarget()
-    if not player.inCombat then return false end
-    if A.IsInPvP then return false end
-
-    if gs.orbsActive then return false end
-
-    for _, spellInfo in ipairs(interrupts) do
-        if target:ShouldInterrupt(spellInfo.spell, spellInfo.isCC, spellInfo.aoe, spellInfo.distance) then
-            return false
-        end
-    end
-
-    if DeathStrike:InRange(target) and target.exists then return false end
-
-    if gs.dsInRange > 0 and A.GetToggle(2, "oorTarget") then
+    
+    if unit:HealthPercent() <= 25 then
         return true
     end
-end
-
-local function updategs()
-    gs.activeEnemies = activeEnemies()
-    gs.orbsActive = orbsActive()
-    gs.fightRemains = fightRemains()
-    gs.shouldAoE = A.GetToggle(2, "AoE") and not A.IsInPvP
-    gs.dsInRange = enemiesInRange()
-
-    gs.woundCount = enemiesInRange(debuffs.festeringWound, 1000)
-    gs.vpCount = enemiesInRange(debuffs.virulentPlague, 1000)
-    gs.woundRefreshable = target:DebuffPandemic(debuffs.festeringWound) and DeathStrike:InRange(target)
-    gs.virulentPlagueRefreshable = target:DebuffPandemic(debuffs.virulentPlague) and DeathStrike:InRange(target)
-    gs.frostFeverRefreshable = target:DebuffPandemic(debuffs.frostFever) and DeathStrike:InRange(target)
-    gs.bloodPlagueRefreshable = target:DebuffPandemic(debuffs.bloodPlague) and DeathStrike:InRange(target)
-
-    gs.lowestWound = lowestWound()
-
-    gs.runes = runesReady()
-
-    gs.gargoyleActive = SummonGargoyle.used < 25000
-    gs.abomActive = RaiseAbomination.used < 30000
-    gs.armyActive = ArmyoftheDead.used < 30000
-    gs.apocActive = Apocalypse.used < 20000
-
-    gs.gargoyleRemains = math.max(25000 - SummonGargoyle.used, 0)
-    gs.abomRemains = math.max(30000 - RaiseAbomination.used, 0)
-    gs.armyRemains = math.max(30000 - ArmyoftheDead.used, 0)
-    gs.apocRemains = math.max(20000 - Apocalypse.used, 0)
-
-    gs.sanlayn = player:TalentKnown(VampiricStrikeTalent.id)
-    gs.vampiricStrike = IsSpellOverlayed(VampiricStrike.id)
-
-    gs.dndCd = player:TalentKnown(Defile.id) and Defile.cd or DeathandDecay.cd
-    gs.dndUsed = player:TalentKnown(Defile.id) and Defile.used or DeathandDecay.used
-    gs.dndTicking = player:Buff(buffs.deathAndDecay) and gs.dndUsed < 10000
-
-    -- actions.variables=variable,name=st_planning,op=setif,value=1,value_else=0,condition=active_enemies=1&(!raid_event.adds.exists|!raid_event.adds.in|raid_event.adds.in>15|raid_event.pull.has_boss&raid_event.adds.in>15)
-    gs.stPlanning = gs.activeEnemies <= 1 and incAddsIn() > 15000
-
-    -- actions.variables+=/variable,name=adds_remain,op=setif,value=1,value_else=0,condition=active_enemies>=2&(!raid_event.adds.exists&fight_remains>6|raid_event.adds.exists&raid_event.adds.remains>6)
-    gs.addsRemain = gs.activeEnemies >= 2
-
-    -- actions.variables+=/variable,name=apoc_timing,op=setif,value=3,value_else=0,condition=cooldown.apocalypse.remains<5&debuff.festering_wound.stack<1&cooldown.unholy_assault.remains>5
-    gs.apocTiming = num(Apocalypse.cd < 5000 and not target:Debuff(debuffs.festeringWound, true) and UnholyAssault.cd > 5000) * 3000
-
-    -- actions.variables+=/variable,name=pop_wounds,op=setif,value=1,value_else=0,condition=(cooldown.apocalypse.remains>variable.apoc_timing|!talent.apocalypse)&(debuff.festering_wound.stack>=1&cooldown.unholy_assault.remains<20&talent.unholy_assault&variable.st_planning|debuff.rotten_touch.up&debuff.festering_wound.stack>=1|debuff.festering_wound.stack>=4-pet.abomination.active)|fight_remains<5&debuff.festering_wound.stack>=1
-    gs.popWounds = (Apocalypse.cd > gs.apocTiming or not player:TalentKnown(Apocalypse.id)) and (target:HasDeBuffCount(debuffs.festeringWound, true) >= 1 and UnholyAssault.cd < 20000 and player:TalentKnown(UnholyAssault.id) and gs.stPlanning or target:Debuff(debuffs.rottenTouch, true) and target:HasDeBuffCount(debuffs.festeringWound, true) >= 1 or target:HasDeBuffCount(debuffs.festeringWound, true) >= 4 - num(gs.abomActive)) or gs.fightRemains < 5000 and target:HasDeBuffCount(debuffs.festeringWound, true) >= 1 or not makBurst()
-
-    -- actions.variables+=/variable,name=pooling_runic_power,op=setif,value=1,value_else=0,condition=talent.vile_contagion&cooldown.vile_contagion.remains<5&runic_power<30
-    gs.poolingRunicPower = player:TalentKnown(VileContagion.id) and VileContagion.cd < 5000 and player.runicPower < 30
-
-    -- actions.variables+=/variable,name=spend_rp,op=setif,value=1,value_else=0,condition=(!talent.rotten_touch|talent.rotten_touch&!debuff.rotten_touch.up|runic_power.deficit<20)&((talent.improved_death_coil&(active_enemies=2|talent.coil_of_devastation)|rune<3|pet.gargoyle.active|buff.sudden_doom.react|!variable.pop_wounds&debuff.festering_wound.stack>=4))
-    gs.spendRp = (not player:TalentKnown(RottenTouch.id) or player:TalentKnown(RottenTouch.id) and not target:Debuff(debuffs.rottenTouch, true) or player.runicPowerDeficit < 20) and ((player:TalentKnown(ImprovedDeathCoil.id) and (gs.activeEnemies == 2 or player:TalentKnown(CoilofDevastation.id)) or gs.runes < 3 or gs.gargoyleActive or player:Buff(buffs.suddenDoom) or not gs.popWounds and target:HasDeBuffCount(debuffs.festeringWound, true) >= 4))
-
-    -- actions.variables+=/variable,name=san_coil_mult,op=setif,value=2,value_else=1,condition=buff.essence_of_the_blood_queen.stack>=4
-    gs.sanCoilMult = player:HasBuffCount(buffs.essenceOfTheBloodQueen) >= 4 and 2 or 1
-
-    -- actions.variables+=/variable,name=epidemic_targets,value=3+talent.improved_death_coil+(talent.frenzied_bloodthirst*variable.san_coil_mult)+(talent.hungering_thirst&talent.harbinger_of_doom&buff.sudden_doom.up)
-    gs.epidemicTargets = 3 + player:TalentKnownInt(ImprovedDeathCoil.id) + (player:TalentKnownInt(FrenziedBloodthirst.id) * gs.sanCoilMult) + num(player:TalentKnown(HungeringThirst.id) and player:TalentKnownInt(HarbingerofDoom.id) and player:Buff(buffs.suddenDoom))
-end
-
---------------------------------------
----Defensives-------------------------
---------------------------------------
-
-AntiMagicShell:Callback(function(spell)
-    if shouldDefensive() then 
-        return spell:Cast()
-    end
-end)
-
-IceboundFortitude:Callback(function(spell)
-    if shouldDefensive() then 
-        return spell:Cast()
-    end
-
-    if player.hp < A.GetToggle(2, "ibfHP") then
-        return spell:Cast()
-    end
-end)
-
-Lichborne:Callback(function(spell)
-    if shouldDefensive() then 
-        return spell:Cast()
-    end
-
-    if player.hp < A.GetToggle(2, "lichborneHP") then
-        return spell:Cast()
-    end
-end)
-
-DeathCoilPlayer:Callback("heal", function(spell)
-    if not A.GetToggle(2, "deathCoilSelf") then return end
-    if not player:Buff(buffs.lichborne) then return end
-
-    if player.ehp < A.GetToggle(2, "deathCoilHealHP") then
-        return spell:Cast()
-    end
-end)
-
-local function defensives()
-    DeathCoilPlayer("heal")
-    AntiMagicShell()
-    IceboundFortitude()
-    Lichborne()
-end
-
---------------------------------------
----Util-------------------------------
---------------------------------------
-RaiseDead:Callback(function(spell)
-    if IsMounted() then return end
-    if pet.exists and pet.hp > 0 then return end
-
-    return spell:Cast()
-end)
-
-RaiseAlly:Callback(function(spell)
-    if A.IsInPvP then return end
-
-    if not A.GetToggle(2, "mouseoverRes") then return end
-    if not player.combat then return end
-    if not mouseover.exists then return end
-    if not mouseover.isFriendly then return end
-    if not mouseover.dead then return end
-    if mouseover.isPet then return end
-
-    return spell:Cast()
-end)
-
-DeathsAdvance:Callback(function(spell)
-    if player:TalentKnown(DeathChargeTalent.id) then return end
-	local locData = C_LossOfControl.GetActiveLossOfControlData(1)
-    if not locData then return false end
-
-	if locData.locType ~= "ROOT" then return false end
-	if locData.timeRemaining <= 1 then return false end
-
-    if player:Buff(buffs.deathsAdvance) or player:Buff(buffs.deathCharge) then return end
-
-    return spell:Cast()
-end)
-
-DeathCharge:Callback(function(spell)
-    if not player:TalentKnown(DeathChargeTalent.id) then return end
-	local locData = C_LossOfControl.GetActiveLossOfControlData(1)
-    if not locData then return false end
-
-	if locData.locType ~= "ROOT" then return false end
-	if locData.timeRemaining <= 1 then return false end
-
-    if player:Buff(buffs.deathsAdvance) or player:Buff(buffs.deathCharge) then return end
-
-    return spell:Cast()
-end)
-
-local function util()
-    RaiseDead()
-    RaiseAlly()
-    DeathsAdvance()
-    DeathCharge()
-end
-
------------------------------------------
----Racials-------------------------------
------------------------------------------
-
--- actions.racials=arcane_torrent,if=runic_power<20&rune<2
-ArcaneTorrent:Callback(function(spell)
-    if not A.GetToggle(1, "Racial") then return end
-    if not DeathStrike:InRange(target) then return end
-    if player.runicPower > 20 then return end
-    if gs.runes > 1 then return end
-
-    return spell:Cast()
-end)
-
--- actions.racials+=/blood_fury,if=(buff.blood_fury.duration+3>=pet.gargoyle.remains&pet.gargoyle.active)|(!talent.summon_gargoyle|cooldown.summon_gargoyle.remains>60)&(pet.army_ghoul.active&pet.army_ghoul.remains<=buff.blood_fury.duration+3|pet.apoc_ghoul.active&pet.apoc_ghoul.remains<=buff.blood_fury.duration+3|active_enemies>=2&death_and_decay.ticking)|fight_remains<=buff.blood_fury.duration+3
-BloodFury:Callback(function(spell)
-    if not A.GetToggle(1, "Racial") then return end
-    if not DeathStrike:InRange(target) then return end
-
-    if 18000 >= gs.gargoyleRemains and gs.gargoyleActive then
-        return spell:Cast()
-    end
-
-    if (not player:TalentKnown(SummonGargoyle.id) or SummonGargoyle.cd > 60000) and (gs.armyActive and gs.armyRemains <= 18000 or gs.apocActive and gs.apocRemains <= 18000 or gs.activeEnemies >= 2 and gs.dndTicking) or gs.fightRemains <= 18000 then
-        return spell:Cast()
-    end
-end)
-
--- actions.racials+=/berserking,if=(buff.berserking.duration+3>=pet.gargoyle.remains&pet.gargoyle.active)|(!talent.summon_gargoyle|cooldown.summon_gargoyle.remains>60)&(pet.army_ghoul.active&pet.army_ghoul.remains<=buff.berserking.duration+3|pet.apoc_ghoul.active&pet.apoc_ghoul.remains<=buff.berserking.duration+3|active_enemies>=2&death_and_decay.ticking)|fight_remains<=buff.berserking.duration+3
-Berserking:Callback(function(spell)
-    if not A.GetToggle(1, "Racial") then return end
-    if not DeathStrike:InRange(target) then return end
-
-    if 15000 >= gs.gargoyleRemains and gs.gargoyleActive then
-        return spell:Cast()
-    end
-
-    if (not player:TalentKnown(SummonGargoyle.id) or SummonGargoyle.cd > 60000) and (gs.armyActive and gs.armyRemains <= 15000 or gs.apocActive and gs.apocRemains <= 15000 or gs.activeEnemies >= 2 and gs.dndTicking) or gs.fightRemains <= 15000 then
-        return spell:Cast()
-    end
-end)
-
--- actions.racials+=/lights_judgment,if=buff.unholy_strength.up&(!talent.festermight|buff.festermight.remains<target.time_to_die|buff.unholy_strength.remains<target.time_to_die)
-LightsJudgment:Callback(function(spell)
-    if not A.GetToggle(1, "Racial") then return end
-
-    if not player:Buff(buffs.unholyStrength) then return end
-    if not player:TalentKnown(Festermight.id) or player:BuffRemains(buffs.festermight) < target.ttd or player:BuffRemains(buffs.unholyStrength) < target.ttd then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.racials+=/ancestral_call,if=(18>=pet.gargoyle.remains&pet.gargoyle.active)|(!talent.summon_gargoyle|cooldown.summon_gargoyle.remains>60)&(pet.army_ghoul.active&pet.army_ghoul.remains<=18|pet.apoc_ghoul.active&pet.apoc_ghoul.remains<=18|active_enemies>=2&death_and_decay.ticking)|fight_remains<=18
-AncestralCall:Callback(function(spell)
-    if not A.GetToggle(1, "Racial") then return end
-    if not DeathStrike:InRange(target) then return end
-
-    if 18000 >= gs.gargoyleRemains and gs.gargoyleActive then
-        return spell:Cast()
-    end
-
-    if (not player:TalentKnown(SummonGargoyle.id) or SummonGargoyle.cd > 60000) and (gs.armyActive and gs.armyRemains <= 18000 or gs.apocActive and gs.apocRemains <= 18000 or gs.activeEnemies >= 2 and gs.dndTicking) or gs.fightRemains <= 18000 then
-        return spell:Cast()
-    end
-end)
-
--- actions.racials+=/arcane_pulse,if=active_enemies>=2|(rune.deficit>=5&runic_power.deficit>=60)
-ArcanePulse:Callback(function(spell)
-    if not A.GetToggle(1, "Racial") then return end
-
-    if gs.activeEnemies >= 2 or (gs.runes <= 1 and player.runicPowerDeficit >= 60) then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.racials+=/fireblood,if=(buff.fireblood.duration+3>=pet.gargoyle.remains&pet.gargoyle.active)|(!talent.summon_gargoyle|cooldown.summon_gargoyle.remains>60)&(pet.army_ghoul.active&pet.army_ghoul.remains<=buff.fireblood.duration+3|pet.apoc_ghoul.active&pet.apoc_ghoul.remains<=buff.fireblood.duration+3|active_enemies>=2&death_and_decay.ticking)|fight_remains<=buff.fireblood.duration+3
-Fireblood:Callback(function(spell)
-    if not A.GetToggle(1, "Racial") then return end
-    if not DeathStrike:InRange(target) then return end
-
-    if 8000 >= gs.gargoyleRemains and gs.gargoyleActive then
-        return spell:Cast()
-    end
-
-    if (not player:TalentKnown(SummonGargoyle.id) or SummonGargoyle.cd > 60000) and (gs.armyActive and gs.armyRemains <= 8000 or gs.apocActive and gs.apocRemains <= 8000 or gs.activeEnemies >= 2 and gs.dndTicking) or gs.fightRemains <= 8000 then
-        return spell:Cast()
-    end
-end)
-
--- actions.racials+=/bag_of_tricks,if=active_enemies=1&(buff.unholy_strength.up|fight_remains<5)
-BagOfTricks:Callback(function(spell)
-    if not A.GetToggle(1, "Racial") then return end
-
-    if gs.activeEnemies == 1 and (player:Buff(buffs.unholyStrength) or gs.fightRemains < 5000) then
-        return spell:Cast(target)
-    end
-end)
-
-local function racials()
-    ArcaneTorrent()
-    BloodFury()
-    Berserking()
-    LightsJudgment()
-    AncestralCall()
-    ArcanePulse()
-    Fireblood()
-    BagOfTricks()
-end
-
------------------------------------------
----Shared CDs----------------------------
------------------------------------------
-
--- actions.cds_shared+=/army_of_the_dead,if=(variable.st_planning|variable.adds_remain)&(talent.commander_of_the_dead&cooldown.dark_transformation.remains<5|!talent.commander_of_the_dead&active_enemies>=1)|fight_remains<35
-ArmyoftheDead:Callback("sharedCd", function(spell)
-    if player:TalentKnown(RaiseAbomination.id) then return end
-
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[1] then return end
-    end
-
-    if gs.stPlanning or gs.addsRemain then
-        if player:TalentKnown(CommanderoftheDead.id) and DarkTransformation.cd < 5000 or not player:TalentKnown(CommanderoftheDead.id) and gs.activeEnemies >= 1 then
-            return spell:Cast()
-        end
-    end
-
-    if gs.fightRemains < 35000 then
-        return spell:Cast()
-    end
-end)
-
--- actions.cds_shared+=/raise_abomination,if=(variable.st_planning|variable.adds_remain)&(!talent.vampiric_strike|(pet.apoc_ghoul.active|!talent.apocalypse))|fight_remains<30
-RaiseAbomination:Callback("sharedCd", function(spell)
-    if not player:TalentKnown(RaiseAbomination.id) then return end
-    if not DeathStrike:InRange(target) then return end
-
-    if not makBurst() then
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[1] then return end
-    end
-
-    if (gs.stPlanning or gs.addsRemain) and (not gs.sanlayn or (gs.apocActive or not player:TalentKnown(Apocalypse.id))) then
-        return spell:Cast()
-    end
-
-    if gs.fightRemains < 30000 then
-        return spell:Cast()
-    end
-end)
-
--- actions.cds_shared+=/summon_gargoyle,use_off_gcd=1,if=(variable.st_planning|variable.adds_remain)&(buff.commander_of_the_dead.up|!talent.commander_of_the_dead&active_enemies>=1)|fight_remains<25
-SummonGargoyle:Callback("sharedCd", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[2] then return end
-    end
-
-    if gs.stPlanning or gs.addsRemain then
-        if player:Buff(buffs.commanderOfTheDead) or not player:TalentKnown(CommanderoftheDead.id) and gs.activeEnemies >= 1 then
-            return spell:Cast()
-        end
-    end
-
-    if gs.fightRemains < 25000 then
-        return spell:Cast()
-    end
-end)
-
-
-local function cdsShared()
-    ArmyoftheDead("sharedCd")
-    RaiseAbomination("sharedCd")
-    SummonGargoyle("sharedCd")
-end
-
------------------------------------------
----CDs AOE Sanlayn-----------------------
------------------------------------------
-
--- actions.cds_aoe_san=dark_transformation,if=variable.adds_remain&(buff.death_and_decay.up|active_enemies<=3)
-DarkTransformation:Callback("aoeSanlynCd", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[3] then return end
-    end
-
-    if not pet.exists or pet.hp <= 0 then return end
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.addsRemain then
-        if player:Buff(buffs.deathAndDecay) or gs.activeEnemies <= 3 then
-            return spell:Cast()
-        end
-    end
-end)
-
--- actions.cds_aoe_san+=/vile_contagion,target_if=max:debuff.festering_wound.stack,if=debuff.festering_wound.stack>=4&(raid_event.adds.remains>4|!raid_event.adds.exists&fight_remains>4)&(raid_event.adds.exists&raid_event.adds.remains<=11|cooldown.any_dnd.remains<3|buff.death_and_decay.up&debuff.festering_wound.stack>=4)|variable.adds_remain&debuff.festering_wound.stack=6
-VileContagion:Callback("aoeSanlynCd", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[4] then return end
-    end
-
-    if target:HasDeBuffCount(debuffs.festeringWound, true) >= 4 then
-        if gs.addsRemain and (gs.dndCd < 3000 or player:Buff(buffs.deathAndDecay)) then
-            return spell:Cast(target)
-        end
-    end
-end)
-
--- actions.cds_aoe_san+=/unholy_assault,target_if=max:debuff.festering_wound.stack,if=variable.adds_remain&(debuff.festering_wound.stack>=2&cooldown.vile_contagion.remains<6|!talent.vile_contagion)
-UnholyAssault:Callback("aoeSanlynCd", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[5] then return end
-    end
-
-    if gs.addsRemain then
-        if target:HasDeBuffCount(debuffs.festeringWound) >= 2 and VileContagion.cd < 6000 or not player:TalentKnown(VileContagion.id) then
-            return spell:Cast(target)
-        end
-    end
-end)
-
--- actions.cds_aoe_san+=/outbreak,if=dot.virulent_plague.ticks_remain<5&(dot.virulent_plague.refreshable|talent.morbidity&!buff.gift_of_the_sanlayn.up&talent.superstrain&dot.frost_fever.refreshable&dot.blood_plague.refreshable)&(!dot.virulent_plague.ticking&variable.epidemic_targets<active_enemies|(!talent.unholy_blight|talent.unholy_blight&cooldown.dark_transformation.remains>5)&(!talent.raise_abomination|talent.raise_abomination&cooldown.raise_abomination.remains>5))
-Outbreak:Callback("aoeSanlynCd", function(spell)
-    if target:DebuffRemains(debuffs.virulentPlague, true) >= 15000 then return end
-    if pet:Buff(buffs.darkTransformation) then return end
-
-    if (gs.virulentPlagueRefreshable or player:TalentKnown(Morbidity.id) and not player:Buff(buffs.giftOfTheSanlayn) and player:TalentKnown(Superstrain.id) and gs.frostFeverRefreshable and gs.bloodPlagueRefreshable) and (not target:Debuff(debuffs.virulentPlague, true) and gs.epidemicTargets < gs.activeEnemies or (not player:TalentKnown(UnholyBlight.id) or player:TalentKnown(UnholyBlight.id) and DarkTransformation.cd > 5000) and (not player:TalentKnown(RaiseAbomination.id) or player:TalentKnown(RaiseAbomination.id) and RaiseAbomination.cd > 5000)) then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.cds_aoe_san+=/apocalypse,target_if=max:debuff.festering_wound.stack,if=variable.adds_remain&rune<=3
-Apocalypse:Callback("aoeSanlynCd", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[6] then return end
-    end
-
-    if gs.addsRemain and gs.runes <= 3 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.cds_aoe_san+=/abomination_limb,if=variable.adds_remain
-AbominationLimb:Callback("aoeSanlynCd", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[7] then return end
-    end
-
-    if gs.addsRemain then
-        return spell:Cast()
-    end
-end)
-
-local function cdsAoESan()
-    DarkTransformation("aoeSanlynCd")
-    VileContagion("aoeSanlynCd")
-    UnholyAssault("aoeSanlynCd")
-    Outbreak("aoeSanlynCd")
-    Apocalypse("aoeSanlynCd")
-    AbominationLimb("aoeSanlynCd")
-end
-
------------------------------------------
----CDs AOE-------------------------------
------------------------------------------
-
--- actions.cds_aoe=vile_contagion,target_if=max:debuff.festering_wound.stack,if=debuff.festering_wound.stack>=4&(raid_event.adds.remains>4|!raid_event.adds.exists&fight_remains>4)&(raid_event.adds.exists&raid_event.adds.remains<=11|cooldown.any_dnd.remains<3|buff.death_and_decay.up&debuff.festering_wound.stack>=4)|variable.adds_remain&debuff.festering_wound.stack=6
-VileContagion:Callback("aoeCds", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[4] then return end
-    end
-
-    if target:HasDeBuffCount(debuffs.festeringWound, true) >= 4 then
-        if gs.addsRemain and (gs.dndCd < 3000 or player:Buff(buffs.deathAndDecay)) then
-            return spell:Cast(target)
-        end
-    end
-end)
-
--- actions.cds_aoe+=/unholy_assault,target_if=max:debuff.festering_wound.stack,if=variable.adds_remain&(debuff.festering_wound.stack>=2&cooldown.vile_contagion.remains<3|!talent.vile_contagion)
-UnholyAssault:Callback("aoeCds", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[5] then return end
-    end
-
-    if gs.addsRemain then
-        if target:HasDeBuffCount(debuffs.festeringWound) >= 2 and VileContagion.cd < 3000 or not player:TalentKnown(VileContagion.id) then
-            return spell:Cast(target)
-        end
-    end
-end)
-
--- actions.cds_aoe+=/dark_transformation,if=variable.adds_remain&(cooldown.vile_contagion.remains>5|!talent.vile_contagion|death_and_decay.ticking|cooldown.death_and_decay.remains<3)
-DarkTransformation:Callback("aoeCds", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[3] then return end
-    end
-
-    if not pet.exists or pet.hp <= 0 then return end
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.addsRemain then
-        if VileContagion.cd > 5000 or not player:TalentKnown(VileContagion.id) or gs.dndTicking or gs.dndCd < 3000 then
-            return spell:Cast()
-        end
-    end
-end)
-
--- actions.cds_aoe+=/outbreak,if=dot.virulent_plague.ticks_remain<5&dot.virulent_plague.refreshable&(!talent.unholy_blight|talent.unholy_blight&cooldown.dark_transformation.remains)&(!talent.raise_abomination|talent.raise_abomination&cooldown.raise_abomination.remains)
-Outbreak:Callback("aoeCds", function(spell)
-    if target:DebuffRemains(debuffs.virulentPlague) >= 15000 then return end
-
-    if gs.virulentPlagueRefreshable and (not player:TalentKnown(UnholyBlight.id) or player:TalentKnown(UnholyBlight.id) and DarkTransformation.cd > 500) and (not player:TalentKnown(RaiseAbomination.id) or player:TalentKnown(RaiseAbomination.id) and RaiseAbomination.cd > 500) then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.cds_aoe+=/apocalypse,target_if=max:debuff.festering_wound.stack,if=variable.adds_remain&rune<=3
-Apocalypse:Callback("aoeCds", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[6] then return end
-    end
-
-    if gs.addsRemain and gs.runes <= 3 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.cds_aoe+=/abomination_limb,if=variable.adds_remain
-AbominationLimb:Callback("aoeCds", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[7] then return end
-    end
-
-    if gs.addsRemain then
-        return spell:Cast()
-    end
-end)
-
-local function cdsAoE()
-    VileContagion("aoeCds")
-    UnholyAssault("aoeCds")
-    DarkTransformation("aoeCds")
-    Outbreak("aoeCds")
-    Apocalypse("aoeCds")
-    AbominationLimb("aoeCds")
-end
-
------------------------------------------
----CDs Cleave Sanlayn--------------------
------------------------------------------
-
--- actions.cds_cleave_san=dark_transformation,if=buff.death_and_decay.up&(talent.apocalypse&pet.apoc_ghoul.active|!talent.apocalypse)|fight_remains<20|raid_event.adds.exists&raid_event.adds.remains<20
-DarkTransformation:Callback("cdsCleaveSan", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[3] then return end
-    end
-
-    if not pet.exists or pet.hp <= 0 then return end
-    if not DeathStrike:InRange(target) then return end
-
-    if player:Buff(buffs.deathAndDecay) and player:TalentKnown(Apocalypse.id) and gs.apocActive or not player:TalentKnown(Apocalypse.id) then
-        return spell:Cast()
-    end
-
-    if gs.fightRemains < 20000 then
-        return spell:Cast()
-    end
-end)
-
--- actions.cds_cleave_san+=/unholy_assault,if=buff.dark_transformation.up&buff.dark_transformation.remains<12|fight_remains<20|raid_event.adds.exists&raid_event.adds.remains<20
-UnholyAssault:Callback("cdsCleaveSan", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[5] then return end
-    end
-
-    if pet:Buff(buffs.darkTransformation) and pet:BuffRemains(buffs.darkTransformation) < 12000 then
-        return spell:Cast(target)
-    end
-
-    if gs.fightRemains < 20000 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.cds_cleave_san+=/apocalypse,target_if=max:debuff.festering_wound.stack
-Apocalypse:Callback("cdsCleaveSan", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[6] then return end
-    end
-end)
-
--- actions.cds_cleave_san+=/outbreak,target_if=target.time_to_die>dot.virulent_plague.remains&dot.virulent_plague.ticks_remain<5,if=(dot.virulent_plague.refreshable|talent.morbidity&buff.infliction_of_sorrow.up&talent.superstrain&dot.frost_fever.refreshable&dot.blood_plague.refreshable)&(!talent.unholy_blight|talent.unholy_blight&cooldown.dark_transformation.remains>6)&(!talent.raise_abomination|talent.raise_abomination&cooldown.raise_abomination.remains>6)
-Outbreak:Callback("cdsCleaveSan", function(spell)
-    if target:DebuffRemains(debuffs.virulentPlague) >= 15000 then return end
-    if pet:Buff(buffs.darkTransformation) then return end
-
-    if (gs.virulentPlagueRefreshable or player:TalentKnown(Morbidity.id) and player:Buff(buffs.inflictionOfSorrow) and player:TalentKnown(Superstrain.id) and gs.frostFeverRefreshable and gs.bloodPlagueRefreshable) and (not player:TalentKnown(UnholyBlight.id) or player:TalentKnown(UnholyBlight.id) and DarkTransformation.cd > 6000) and (not player:TalentKnown(RaiseAbomination.id) or player:TalentKnown(RaiseAbomination.id) and RaiseAbomination.cd > 6000) then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.cds_cleave_san+=/abomination_limb,if=!buff.gift_of_the_sanlayn.up&!buff.sudden_doom.react&buff.festermight.up&debuff.festering_wound.stack<=2|!buff.gift_of_the_sanlayn.up&fight_remains<12
-AbominationLimb:Callback("cdsCleaveSan", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[7] then return end
-    end
-
-    if not player:Buff(buffs.giftOfTheSanlayn) and not player:Buff(buffs.suddenDoom) and player:Buff(buffs.festermight) and target:HasDeBuffCount(debuffs.festeringWound) <= 2 or not player:Buff(buffs.giftOfTheSanlayn) and gs.fightRemains < 12000 then
-        return spell:Cast()
-    end
-end)
-
-local function cdsCleaveSan()
-    DarkTransformation("cdsCleaveSan")
-    UnholyAssault("cdsCleaveSan")
-    Apocalypse("cdsCleaveSan")
-    Outbreak("cdsCleaveSan")
-    AbominationLimb("cdsCleaveSan")
-end
-
-----------------------------------
----CDs Sanlayn--------------------
-----------------------------------
-
--- actions.cds_san=dark_transformation,if=active_enemies>=1&variable.st_planning&(talent.apocalypse&pet.apoc_ghoul.active|!talent.apocalypse)|fight_remains<20
-DarkTransformation:Callback("cdsSan", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[3] then return end
-    end
-
-    if not pet.exists or pet.hp <= 0 then return end
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.activeEnemies >= 1 and gs.stPlanning and (player:TalentKnown(Apocalypse.id) and gs.apocActive or not player:TalentKnown(Apocalypse.id)) or gs.fightRemains < 20 then
-        return spell:Cast()
-    end
-end)
-
--- actions.cds_san+=/unholy_assault,if=variable.st_planning&(buff.dark_transformation.up&buff.dark_transformation.remains<12)|fight_remains<20
-UnholyAssault:Callback("cdsSan", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[5] then return end
-    end
-
-    if gs.stPlanning and pet:Buff(buffs.darkTransformation) and pet:BuffRemains(buffs.darkTransformation) < 12000 then
-        return spell:Cast(target)
-    end
-
-    if gs.fightRemains < 20000 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.cds_san+=/apocalypse,if=variable.st_planning|fight_remains<20
-Apocalypse:Callback("cdsSan", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[6] then return end
-    end
-
-    if gs.stPlanning or gs.fightRemains < 20000 then
-        return spell:Cast()
-    end
-end)
-
--- actions.cds_san+=/outbreak,target_if=target.time_to_die>dot.virulent_plague.remains&dot.virulent_plague.ticks_remain<5,if=(dot.virulent_plague.refreshable|talent.morbidity&buff.infliction_of_sorrow.up&talent.superstrain&dot.frost_fever.refreshable&dot.blood_plague.refreshable)&(!talent.unholy_blight|talent.unholy_blight&cooldown.dark_transformation.remains>6)&(!talent.raise_abomination|talent.raise_abomination&cooldown.raise_abomination.remains>6)
-Outbreak:Callback("cdsSan", function(spell)
-    if target:DebuffRemains(debuffs.virulentPlague) >= 15000 then return end
-    if pet:Buff(buffs.darkTransformation) then return end
-
-    if (gs.virulentPlagueRefreshable or player:TalentKnown(Morbidity.id) and player:Buff(buffs.inflictionOfSorrow) and player:TalentKnown(Superstrain.id) and gs.frostFeverRefreshable and gs.bloodPlagueRefreshable) and (not player:TalentKnown(UnholyBlight.id) or player:TalentKnown(UnholyBlight.id) and DarkTransformation.cd > 6000) and (not player:TalentKnown(RaiseAbomination.id) or player:TalentKnown(RaiseAbomination.id) and RaiseAbomination.cd > 6000) then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.cds_san+=/abomination_limb,if=active_enemies>=1&variable.st_planning&!buff.gift_of_the_sanlayn.up&!buff.sudden_doom.react&buff.festermight.up&debuff.festering_wound.stack<=2|!buff.gift_of_the_sanlayn.up&fight_remains<12
-AbominationLimb:Callback("cdsSan", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[7] then return end
-    end
-
-    if gs.activeEnemies >= 1 and gs.stPlanning and not player:Buff(buffs.giftOfTheSanlayn) and not player:Buff(buffs.suddenDoom) and player:Buff(buffs.festermight) and target:HasDeBuffCount(debuffs.festeringWound) <= 2 or not player:Buff(buffs.giftOfTheSanlayn) and gs.fightRemains < 12000 then
-        return spell:Cast()
-    end
-end)
-
-local function cdsSan()
-    DarkTransformation("cdsSan")
-    UnholyAssault("cdsSan")
-    Apocalypse("cdsSan")
-    Outbreak("cdsSan")
-    AbominationLimb("cdsSan")
-end
-
---------------------------
----CDs--------------------
---------------------------
-
--- actions.cds=dark_transformation,if=variable.st_planning&(cooldown.apocalypse.remains<8|!talent.apocalypse|active_enemies>=1)|fight_remains<20
-DarkTransformation:Callback("cds", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[3] then return end
-    end
-
-    if not pet.exists or pet.hp <= 0 then return end
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.stPlanning and (Apocalypse.cd < 8000 or not player:TalentKnown(Apocalypse.id) or gs.activeEnemies >= 1) or gs.fightRemains < 20 then
-        return spell:Cast()
-    end
-end)
-
--- actions.cds+=/unholy_assault,if=variable.st_planning&(cooldown.apocalypse.remains<gcd*2|!talent.apocalypse|active_enemies>=2&buff.dark_transformation.up)|fight_remains<20
-UnholyAssault:Callback("cds", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[5] then return end
-    end
-
-    if gs.stPlanning and (Apocalypse.cd < A.GetGCD() * 2000 or not player:TalentKnown(Apocalypse.id) or gs.activeEnemies >= 2 and pet:Buff(buffs.darkTransformation)) then
-        return spell:Cast(target)
-    end
-
-    if gs.fightRemains < 20000 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.cds+=/apocalypse,if=variable.st_planning|fight_remains<20
-Apocalypse:Callback("cds", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[6] then return end
-    end
-
-    if gs.stPlanning or gs.fightRemains < 20000 then
-        return spell:Cast()
-    end
-end)
-
--- actions.cds+=/outbreak,target_if=target.time_to_die>dot.virulent_plague.remains&dot.virulent_plague.ticks_remain<5,if=(dot.virulent_plague.refreshable|talent.superstrain&(dot.frost_fever.refreshable|dot.blood_plague.refreshable))&(!talent.unholy_blight|talent.plaguebringer)&(!talent.raise_abomination|talent.raise_abomination&cooldown.raise_abomination.remains>dot.virulent_plague.ticks_remain*3)
-Outbreak:Callback("cds", function(spell)
-    if pet:Buff(buffs.darkTransformation) then return end
-
-    if (gs.virulentPlagueRefreshable or player:TalentKnown(Superstrain.id) and (gs.frostFeverRefreshable or gs.bloodPlagueRefreshable)) and (not player:TalentKnown(UnholyBlight.id) or player:TalentKnown(Plaguebringer.id)) and (not player:TalentKnown(RaiseAbomination.id) or player:TalentKnown(RaiseAbomination.id) and RaiseAbomination.cd > 9000) then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.cds+=/abomination_limb,if=variable.st_planning&!buff.sudden_doom.react&(buff.festermight.up&buff.festermight.stack>8|!talent.festermight)&(pet.apoc_ghoul.remains<5|!talent.apocalypse)&debuff.festering_wound.stack<=2|fight_remains<12
-AbominationLimb:Callback("cds", function(spell)
-    if not makBurst() then 
-        local cooldownUsage = A.GetToggle(2, "cooldownUsage")
-        if cooldownUsage[7] then return end
-    end
-
-    if gs.stPlanning and not player:Buff(buffs.suddenDoom) and (player:Buff(buffs.festermight) and player:HasBuffCount(buffs.festermight) > 8 or not player:TalentKnown(Festermight.id)) and (gs.apocRemains < 5000 or not player:TalentKnown(Apocalypse.id)) and target:HasDeBuffCount(debuffs.festeringWound, true) <= 2 or gs.fightRemains < 12000 then
-        return spell:Cast()
-    end
-end)
-
-local function cds()
-    DarkTransformation("cds")
-    UnholyAssault("cds")
-    Apocalypse("cds")
-    Outbreak("cds")
-    AbominationLimb("cds")
-end
-
------------------------------
----Cleave--------------------
------------------------------
-
--- actions.cleave=any_dnd,if=!death_and_decay.ticking&variable.adds_remain&(cooldown.apocalypse.remains|!talent.apocalypse)
-DeathandDecay:Callback("cleave", function(spell)
-    if player:TalentKnown(Defile.id) then return end
-
-    if not DeathStrike:InRange(target) then return end
-    if player.stayTime < A.GetToggle(2, "DNDTimer") then return end
-
-    if gs.dndTicking then return end
-    if not gs.addsRemain then return end
-    if player:TalentKnown(Apocalypse.id) then
-        if Apocalypse.cd < 500 then return end
-    end
-
-    return spell:Cast()
-end)
-
-Defile:Callback("cleave", function(spell)
-    if not player:TalentKnown(Defile.id) then return end
-
-    if not DeathStrike:InRange(target) then return end
-    if player.stayTime < A.GetToggle(2, "DNDTimer") then return end
-
-    if gs.dndTicking then return end
-    if not gs.addsRemain then return end
-    if player:TalentKnown(Apocalypse.id) then
-        if Apocalypse.cd < 500 then return end
-    end
-
-    return spell:Cast()
-end)
-
--- actions.cleave+=/death_coil,if=!variable.pooling_runic_power&talent.improved_death_coil
-DeathCoil:Callback("cleave", function(spell)
-    if gs.poolingRunicPower then return end
-    if not player:TalentKnown(ImprovedDeathCoil.id) then return end
-
-    return spell:Cast(target)
-end)
-
--- actions.cleave+=/wound_spender,if=buff.vampiric_strike.react
-ScourgeStrike:Callback("cleave", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if not gs.vampiricStrike then return end
-    if gs.runes < 1 then return end
-
-    return spell:Cast(target)
-end)
-
-ClawingShadows:Callback("cleave", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if not gs.vampiricStrike then return end
-    if gs.runes < 1 then return end
-
-    return spell:Cast(target)
-end)
-
--- actions.cleave+=/death_coil,if=!variable.pooling_runic_power&!talent.improved_death_coil
-DeathCoil:Callback("cleave2", function(spell)
-    if gs.poolingRunicPower then return end
-    if player:TalentKnown(ImprovedDeathCoil.id) then return end
-
-    return spell:Cast(target)
-end)
-
--- actions.cleave+=/festering_strike,target_if=min:debuff.festering_wound.stack,if=!buff.vampiric_strike.react&!variable.pop_wounds&debuff.festering_wound.stack<2|buff.festering_scythe.react
--- actions.cleave+=/festering_strike,target_if=max:debuff.festering_wound.stack,if=!buff.vampiric_strike.react&cooldown.apocalypse.remains<variable.apoc_timing&debuff.festering_wound.stack<1
-FesteringStrike:Callback("cleave", function(spell)
-    if not gs.popWounds and target:HasDeBuffCount(debuffs.festeringWound, true) < 2 then
-        return spell:Cast(target)
-    end
-
-    if player:Buff(buffs.festeringScythe) then
-        return spell:Cast(target)
-    end
-
-    if Apocalypse.cd < gs.apocTiming and target:HasDeBuffCount(debuffs.festeringWound, true) < 1 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.cleave+=/wound_spender,if=variable.pop_wounds
-ScourgeStrike:Callback("cleave2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if not gs.popWounds then return end
-    if gs.runes < 1 then return end
-
-    return spell:Cast(target)
-end)
-
-ClawingShadows:Callback("cleave2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if not gs.popWounds then return end
-    if gs.runes < 1 then return end
-
-    return spell:Cast(target)
-end)
-
-local function cleave()
-    DeathandDecay("cleave")
-    Defile("cleave")
-    DeathCoil("cleave") 
-    ScourgeStrike("cleave")
-    ClawingShadows("cleave")
-    DeathCoil("cleave2")
-    FesteringStrike("cleave")
-    ScourgeStrike("cleave2")
-    ClawingShadows("cleave2")
-end
-
---------------------------------
----AoE Setup--------------------
---------------------------------
-
--- actions.aoe_setup=festering_strike,if=buff.festering_scythe.react
--- actions.aoe_setup+=/festering_strike,target_if=max:debuff.festering_wound.stack,if=talent.vile_contagion&cooldown.vile_contagion.remains<5&!debuff.festering_wound.stack=6
--- actions.aoe_setup+=/festering_strike,target_if=min:debuff.festering_wound.stack,if=death_knight.fwounded_targets=0&cooldown.apocalypse.remains<gcd
-
-FesteringStrike:Callback("aoeSetup", function(spell)
-    if player:Buff(buffs.festeringScythe) then 
-        return spell:Cast(target)
-    end
-
-    if player:TalentKnown(VileContagion.id) and VileContagion.cd < 5000 and target:HasDeBuffCount(debuffs.festeringWound, true) < 6 then
-        return spell:Cast(target)
-    end
-
-    if gs.woundCount == 0 and Apocalypse.cd < A.GetGCD() * 1000 and player:TalentKnown(Apocalypse.id) then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.aoe_setup+=/wound_spender,target_if=debuff.chains_of_ice_trollbane_slow.up
-ScourgeStrike:Callback("aoeSetup", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if not target:Debuff(debuffs.chainsOfIceTrollbane, true) then return end
-    if gs.runes < 1 then return end
-
-    return spell:Cast(target)
-end)
-
-ClawingShadows:Callback("aoeSetup", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if not target:Debuff(debuffs.chainsOfIceTrollbane, true) then return end
-    if gs.runes < 1 then return end
-
-    return spell:Cast(target)
-end)
-
--- actions.aoe_setup+=/death_coil,if=!variable.pooling_runic_power&active_enemies<variable.epidemic_targets&rune<4
-DeathCoil:Callback("aoeSetup", function(spell)
-    if gs.poolingRunicPower then return end
-    if gs.runes >= 4 then return end
-
-    if gs.activeEnemies < gs.epidemicTargets then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.aoe_setup+=/epidemic,if=!variable.pooling_runic_power&variable.epidemic_targets<=active_enemies&rune<4
-Epidemic:Callback("aoeSetup", function(spell)
-    if gs.vpCount <= 0 then return end
-
-    if gs.poolingRunicPower then return end
-    if gs.runes >= 4 then return end
-
-    if gs.epidemicTargets <= gs.activeEnemies then
-        return spell:Cast()
-    end
-end)
-
--- actions.aoe_setup+=/any_dnd,if=!death_and_decay.ticking&(!talent.bursting_sores&!talent.vile_contagion|death_knight.fwounded_targets=active_enemies|death_knight.fwounded_targets>=8|raid_event.adds.exists&raid_event.adds.remains<=11&raid_event.adds.remains>5|!buff.death_and_decay.up&talent.defile&rune>3)
-DeathandDecay:Callback("aoeSetup", function(spell)
-    if player:TalentKnown(Defile.id) then return end
-
-    if not DeathStrike:InRange(target) then return end
-    if player.stayTime < A.GetToggle(2, "DNDTimer") then return end
-
-    if gs.dndTicking then return end
-
-    if not player:TalentKnown(BurstingSores.id) and not player:TalentKnown(VileContagion.id) then
-        return spell:Cast()
-    end
-
-    if gs.woundCount >= math.min(8, gs.activeEnemies) then
-        return spell:Cast()
-    end 
     
-    if gs.addsRemain then
-        return spell:Cast()
+    return false
+end
+
+--#####################################################################################################################################################################################
+
+local useKick, useCC, useRacial, notInterruptable, castRemainsTime
+
+local function Interrupts(unitID)
+    if A.Zone == "arena" then return false end
+    
+    if A.InstanceInfo.KeyStone > 1 then
+        useKick, useCC, useRacial, notInterruptable, castRemainsTime = InterruptIsValid(unitID, "BerserkerS3Interrupts", true, true)
+    else
+        useKick, useCC, useRacial, notInterruptable, castRemainsTime = InterruptIsValid(unitID, "BerserkerPvpInterrupts", true, true)
     end
+    
+    if castRemainsTime == 0 then return false end
+    
+    if useKick and not notInterruptable and Unit(unitID):IsBuffDown(Kick_Immune_Buffs) then
         
-    if not player:Buff(buffs.deathAndDecay) and player:TalentKnown(Defile.id) and gs.runes > 3 then
-        return spell:Cast()
-    end
-end)
-
-Defile:Callback("aoeSetup", function(spell)
-    if not player:TalentKnown(Defile.id) then return end
-
-    if not DeathStrike:InRange(target) then return end
-    if player.stayTime < A.GetToggle(2, "DNDTimer") then return end
-
-    if gs.dndTicking then return end
-
-    if not player:TalentKnown(BurstingSores.id) and not player:TalentKnown(VileContagion.id) then
-        return spell:Cast()
-    end
-
-    if gs.woundCount >= math.min(8, gs.activeEnemies) then
-        return spell:Cast()
-    end 
-    
-    if gs.addsRemain then
-        return spell:Cast()
-    end
+        if A.MindFreeze:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and A.MindFreeze:AbsentImun(unitID, Temp.TotalAndMagKick, true) then return A.MindFreeze end
         
-    if not player:Buff(buffs.deathAndDecay) and player:TalentKnown(Defile.id) and gs.runes > 3 then
-        return spell:Cast()
+        if A.Leap:IsReadyByPassCastGCD(unitID) and CanAttackTargetPhysical(unitID) and Unit(pet):IsBuffUp(A.DarkTransformation.ID) and Unit(pet):IsDebuffDown(Root_Debuff) and A.Leap:AbsentImun(unitID, Temp.TotalAndPhysKick, true) then return A.Leap end
     end
-end)
-
---actions.aoe_setup+=/death_coil,if=!variable.pooling_runic_power&active_enemies<variable.epidemic_targets&(buff.sudden_doom.react|death_knight.fwounded_targets=active_enemies|death_knight.fwounded_targets>=8)
-DeathCoil:Callback("aoeSetup2", function(spell)
-    if gs.poolingRunicPower then return end
-
-    if gs.activeEnemies < gs.epidemicTargets and (player:Buff(buffs.suddenDoom) or gs.woundCount >= math.min(gs.activeEnemies, 8)) then
-        return spell:Cast(target)
-    end
-end)
-
---actions.aoe_setup+=/epidemic,if=!variable.pooling_runic_power&variable.epidemic_targets<=active_enemies&(buff.sudden_doom.react|death_knight.fwounded_targets=active_enemies|death_knight.fwounded_targets>=8)
-Epidemic:Callback("aoeSetup2", function(spell)
-    if gs.vpCount <= 0 then return end
-
-    if gs.poolingRunicPower then return end
-
-    if gs.activeEnemies < gs.epidemicTargets and (player:Buff(buffs.suddenDoom) or gs.woundCount >= math.min(gs.activeEnemies, 8)) then
-        return spell:Cast()
-    end
-end)
-
-
--- actions.aoe_setup+=/death_coil,if=!variable.pooling_runic_power&active_enemies<variable.epidemic_targets
-DeathCoil:Callback("aoeSetup3", function(spell)
-    if gs.poolingRunicPower then return end
-
-    if gs.activeEnemies < gs.epidemicTargets then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.aoe_setup+=/epidemic,if=!variable.pooling_runic_power
-Epidemic:Callback("aoeSetup3", function(spell)
-    if gs.vpCount <= 0 then return end
-
-    if gs.poolingRunicPower then return end
     
-    return spell:Cast()
-end)
-
--- actions.aoe_setup+=/festering_strike,target_if=min:debuff.festering_wound.stack,if=death_knight.fwounded_targets<8&!death_knight.fwounded_targets=active_enemies
-FesteringStrike:Callback("aoeSetup2", function(spell)
-    if gs.woundCount < math.min(gs.activeEnemies, 8) then
-        return spell:Cast(target)
+    if useCC and Unit(unitID):IsBuffDown(CC_Immune_Buffs) then
+        
+        if A.Asphyxiate:IsReadyByPassCastGCD(unitID) and CanAttackTargetPhysical(unitID) and Unit(unitID):GetDR("stun") >= 50 then return A.Asphyxiate end
+        
+        if A.Strangulate:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and Unit(unitID):GetDR("silence") >= 50 and Unit(unitID):IsBuffDown(378444) then return A.Strangulate end
+        
+        --if A.Gnaw:IsReadyByPassCastGCD(unitID) and CanAttackTargetPhysical(unitID) and Unit(unitID):GetDR("stun") >= 50 and Unit(pet):IsBuffUp(A.DarkTransformation.ID) then return A.Gnaw end
     end
-end)
-
--- actions.aoe_setup+=/wound_spender,target_if=max:debuff.festering_wound.stack,if=buff.vampiric_strike.react
-ScourgeStrike:Callback("aoeSetup2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if not gs.vampiricStrike then return end
-    if gs.runes < 1 then return end
-
-    return spell:Cast(target)
-end)
-
-ClawingShadows:Callback("aoeSetup2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if not gs.vampiricStrike then return end
-    if gs.runes < 1 then return end
-
-    return spell:Cast(target)
-end)
-
-local function aoeSetup()
-    FesteringStrike("aoeSetup")
-    ScourgeStrike("aoeSetup")
-    ClawingShadows("aoeSetup")
-    DeathCoil("aoeSetup")
-    Epidemic("aoeSetup")
-    DeathandDecay("aoeSetup")
-    Defile("aoeSetup")
-    DeathCoil("aoeSetup2")
-    Epidemic("aoeSetup2")
-    DeathCoil("aoeSetup3")
-    Epidemic("aoeSetup3")
-    FesteringStrike("aoeSetup2")
-    ScourgeStrike("aoeSetup2")
-    ClawingShadows("aoeSetup2")
 end
 
---------------------------------
----AoE Burst--------------------
---------------------------------
+--#####################################################################################################################################################################################
 
--- actions.aoe_burst=festering_strike,if=buff.festering_scythe.react
-FesteringStrike:Callback("aoeBurst", function(spell)
-    if not player:Buff(buffs.festeringScythe) then return end
-
-    return spell:Cast(target)
-end)
-
--- actions.aoe_burst+=/death_coil,if=!buff.vampiric_strike.react&active_enemies<variable.epidemic_targets&(!talent.bursting_sores|talent.bursting_sores&death_knight.fwounded_targets<active_enemies&death_knight.fwounded_targets<active_enemies*0.4&buff.sudden_doom.react|buff.sudden_doom.react&(talent.doomed_bidding&talent.menacing_magus|talent.rotten_touch|debuff.death_rot.remains<gcd)|rune<2)
-DeathCoil:Callback("aoeBurst", function(spell)
-    if gs.vampiricStrike then return end
-    if gs.activeEnemies >= gs.epidemicTargets then return end
-
-    if not player:TalentKnown(BurstingSores.id) or player:TalentKnown(BurstingSores.id) and gs.woundCount < gs.activeEnemies * 0.4 and player:Buff(buffs.suddenDoom) then
-        return spell:Cast(target)
-    end
-
-    if player:Buff(buffs.suddenDoom) and (player:TalentKnown(DoomedBidding.id) and player:TalentKnown(MenacingMagus.id) or player:TalentKnown(RottenTouch.id) or target:DebuffRemains(debuffs.rottenTouch, true) < A.GetGCD() * 1000) or gs.runes < 2 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.aoe_burst+=/epidemic,if=!buff.vampiric_strike.react&(!talent.bursting_sores|talent.bursting_sores&death_knight.fwounded_targets<active_enemies&death_knight.fwounded_targets<active_enemies*0.4&buff.sudden_doom.react|buff.sudden_doom.react&(buff.a_feast_of_souls.up|debuff.death_rot.remains<gcd|debuff.death_rot.stack<10)|rune<2)
-Epidemic:Callback("aoeBurst", function(spell)
-    if gs.vpCount <= 0 then return end
-
-    if gs.vampiricStrike then return end
-
-    if not player:TalentKnown(BurstingSores.id) or player:TalentKnown(BurstingSores.id) and gs.woundCount < gs.activeEnemies * 0.4 and player:Buff(buffs.suddenDoom) then
-        return spell:Cast()
-    end
-
-    if player:Buff(buffs.suddenDoom) and (player:Buff(buffs.aFeastOfSouls) or target:DebuffRemains(debuffs.rottenTouch, true) < A.GetGCD() * 1000 or target:HasDeBuffCount(debuffs.deathRot, true) < 10) or gs.runes < 2 then
-        return spell:Cast()
-    end
-end)
-
--- actions.aoe_burst+=/wound_spender,target_if=debuff.chains_of_ice_trollbane_slow.up
--- actions.aoe_burst+=/wound_spender,target_if=max:debuff.festering_wound.stack,if=debuff.festering_wound.stack>=1|buff.vampiric_strike.react
-ScourgeStrike:Callback("aoeBurst", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-
-    if target:Debuff(debuffs.chainsOfIceTrollbane, true) then
-        return spell:Cast(target)
-    end
-
-    if target:HasDeBuffCount(debuffs.festeringWound, true) >= 1 then
-        return spell:Cast(target)
-    end
-
-    if gs.vampiricStrike then
-        return spell:Cast(target)
-    end
-end)
-
-ClawingShadows:Callback("aoeBurst", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
+local function UseItems()
+    if Unit("player"):CombatTime() == 0 then return false end
     
-    if target:Debuff(debuffs.chainsOfIceTrollbane, true) then
-        return spell:Cast(target)
-    end
-
-    if target:HasDeBuffCount(debuffs.festeringWound, true) >= 1 then
-        return spell:Cast(target)
-    end
-
-    if gs.vampiricStrike then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.aoe_burst+=/death_coil,if=active_enemies<variable.epidemic_targets
-DeathCoil:Callback("aoeBurst2", function(spell)
-    if gs.activeEnemies >= gs.epidemicTargets then return end
-
-    return spell:Cast(target)
-end)
-
--- actions.aoe_burst+=/epidemic
-Epidemic:Callback("aoeBurst2", function(spell)
-    if gs.vpCount <= 0 then return end
-
-    return spell:Cast()
-end)
-
--- actions.aoe_burst+=/festering_strike,target_if=min:debuff.festering_wound.stack,if=debuff.festering_wound.stack<=2
-FesteringStrike:Callback("aoeBurst2", function(spell)
-    if target:HasDeBuffCount(debuffs.festeringWound, true) <= 2 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.aoe_burst+=/wound_spender,target_if=max:debuff.festering_wound.stack
-ScourgeStrike:Callback("aoeBurst2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-
-    return spell:Cast(target)
-end)
-
-ClawingShadows:Callback("aoeBurst2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-
-    return spell:Cast(target)
-end)
-
-local function aoeBurst()
-    FesteringStrike("aoeBurst")
-    DeathCoil("aoeBurst")
-    Epidemic("aoeBurst")
-    ScourgeStrike("aoeBurst")
-    ClawingShadows("aoeBurst")
-    DeathCoil("aoeBurst2")
-    Epidemic("aoeBurst2")
-    FesteringStrike("aoeBurst2")
-    ScourgeStrike("aoeBurst2")
-    ClawingShadows("aoeBurst2")
+    -- Blood Fury
+    if A.BloodFury:IsReadyByPassCastGCD() then return A.BloodFury end
+    
+    -- Berserking
+    if A.Berserking:IsReadyByPassCastGCD() then return A.Berserking end
+    
+    -- Fireblood
+    if A.Fireblood:IsReadyByPassCastGCD() then return A.Fireblood end
+    
+    -- Ancestral Call
+    if A.AncestralCall:IsReadyByPassCastGCD() then return A.AncestralCall end
+    
+    -- Bag of Tricks
+    if A.BagofTricks:IsReadyByPassCastGCD() then return A.BagofTricks end
+    
+    -- LightsJudgment
+    if A.LightsJudgment:IsReadyByPassCastGCD() then return A.LightsJudgment end
+    
+    if (A.Zone == "arena" or A.Zone == "pvp") then return false end
+    
+    --Trinket1
+    if A.Trinket1:IsReadyByPassCastGCD() and not Temp.IsSlotTrinketBlocked[A.Trinket1.ID] then return A.Trinket1 end
+    
+    --Trinket2
+    if A.Trinket2:IsReadyByPassCastGCD() and not Temp.IsSlotTrinketBlocked[A.Trinket2.ID] then return A.Trinket2 end
 end
 
---------------------------
----AoE--------------------
---------------------------
+--#####################################################################################################################################################################################
 
--- actions.aoe=festering_strike,if=buff.festering_scythe.react
-FesteringStrike:Callback("aoe", function(spell)
-    if not player:Buff(buffs.festeringScythe) then return end
-
-    return spell:Cast(target)
-end)
-
--- actions.aoe+=/wound_spender,target_if=max:debuff.festering_wound.stack,if=debuff.festering_wound.stack>=1&buff.death_and_decay.up&talent.bursting_sores&cooldown.apocalypse.remains>variable.apoc_timing
-ScourgeStrike:Callback("aoe", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-
-    if target:HasDeBuffCount(debuffs.festeringWound, true) >= 1 and player:Buff(buffs.deathAndDecay) and player:TalentKnown(BurstingSores.id) and Apocalypse.cd > gs.apocTiming then
-        return spell:Cast(target)
-    end
-end)
-
-ClawingShadows:Callback("aoe", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-
-    if target:HasDeBuffCount(debuffs.festeringWound, true) >= 1 and player:Buff(buffs.deathAndDecay) and player:TalentKnown(BurstingSores.id) and Apocalypse.cd > gs.apocTiming then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.aoe+=/death_coil,if=!variable.pooling_runic_power&active_enemies<variable.epidemic_targets
-DeathCoil:Callback("aoe", function(spell)
-    if gs.poolingRunicPower then return end
-
-    if gs.activeEnemies < gs.epidemicTargets then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.aoe+=/epidemic,if=!variable.pooling_runic_power
-Epidemic:Callback("aoe", function(spell)
-    if gs.vpCount <= 0 then return end
-
-    if gs.poolingRunicPower then return end
-
-    return spell:Cast()
-end)
-
--- actions.aoe+=/wound_spender,target_if=debuff.chains_of_ice_trollbane_slow.up
-ScourgeStrike:Callback("aoe2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
+local function AutoAntiMagicZonePvp()
+    local checkDmgBuffsfromEnemy = {
+        51271,   -- Pillar of Frost
+        207289,  -- Unholy Assault
+        323639,  -- The Hunt
+        194223,  -- Celestial Alignment
+        375087,  -- Dragonrage
+        190319,  -- Combustion
+        12472,   -- Icy Veins
+        365350,  -- Arcane Surge
+        31884,   -- Avenging Wrath
+        2825,    -- Bloodlust
+        --114051,  -- Ascendance (currently procing on mage ascendance)
+        205180,  -- Summon Darkglare
+        265187,  -- Summon Demonic Tyrant
+        258925,  -- Fel Barrage
+		357210,	 -- Deep Breath
+        102560,  -- Boomie Incarn
+        162264,  -- Metamorphosis
+        191427,  -- Metamorphosis
+        360952,  -- Coordinated Assault
+    }
     
-    if not target:Debuff(debuffs.chainsOfIceTrollbane, true) then return end
-
-    return spell:Cast(target)
-end)
-
-ClawingShadows:Callback("aoe2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if not target:Debuff(debuffs.chainsOfIceTrollbane, true) then return end
-
-    return spell:Cast(target)
-end)
-
--- actions.aoe+=/festering_strike,target_if=max:debuff.festering_wound.stack,if=cooldown.apocalypse.remains<variable.apoc_timing|buff.festering_scythe.react
--- actions.aoe+=/festering_strike,target_if=min:debuff.festering_wound.stack,if=debuff.festering_wound.stack<2
-FesteringStrike:Callback("aoe2", function(spell)
-    if Apocalypse.cd < gs.apocTiming then
-        return spell:Cast(target)
-    end
-
-    if target:HasDeBuffCount(debuffs.festeringWound, true) < 2 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.aoe+=/wound_spender,target_if=max:debuff.festering_wound.stack,if=debuff.festering_wound.stack>=1&cooldown.apocalypse.remains>gcd|buff.vampiric_strike.react&dot.virulent_plague.ticking
-ScourgeStrike:Callback("aoe3", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if target:HasDeBuffCount(debuffs.festeringWound, true) >= 1 and Apocalypse.cd > A.GetGCD() * 1000 or gs.vampiricStrike and target:Debuff(debuffs.virulentPlague, true) then
-        return spell:Cast(target)
-    end
-end)
-
-ClawingShadows:Callback("aoe3", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if target:HasDeBuffCount(debuffs.festeringWound, true) >= 1 and Apocalypse.cd > A.GetGCD() * 1000 or gs.vampiricStrike and target:Debuff(debuffs.virulentPlague, true) then
-        return spell:Cast(target)
-    end
-end)
-
-local function aoe()
-    FesteringStrike("aoe")
-    ScourgeStrike("aoe")
-    ClawingShadows("aoe")
-    DeathCoil("aoe")
-    Epidemic("aoe")
-    ScourgeStrike("aoe2")
-    ClawingShadows("aoe2")
-    FesteringStrike("aoe2")
-    ScourgeStrike("aoe3")
-    ClawingShadows("aoe3")
-end
-
---------------------------
----Sanlayn Fishing--------
---------------------------
-
--- actions.san_fishing+=/wound_spender,if=buff.infliction_of_sorrow.up
-ScourgeStrike:Callback("sanFishing", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if not player:Buff(buffs.inflictionOfSorrow) then return end
-
-    return spell:Cast(target)
-end)
-
-ClawingShadows:Callback("sanFishing", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if not player:Buff(buffs.inflictionOfSorrow) then return end
-
-    return spell:Cast(target)
-end)
-
--- actions.san_fishing+=/any_dnd,if=!buff.death_and_decay.up&!buff.vampiric_strike.react
-DeathandDecay:Callback("sanFishing", function(spell)
-    if player:TalentKnown(Defile.id) then return end
-
-    if not DeathStrike:InRange(target) then return end
-    if player.stayTime < A.GetToggle(2, "DNDTimer") then return end
-
-    if player:Buff(buffs.deathAndDecay) then return end
-    if gs.vampiricStrike then return end
-
-    return spell:Cast()
-end)
-
-Defile:Callback("sanFishing", function(spell)
-    if not player:TalentKnown(Defile.id) then return end
-
-    if not DeathStrike:InRange(target) then return end
-    if player.stayTime < A.GetToggle(2, "DNDTimer") then return end
-
-    if player:Buff(buffs.deathAndDecay) then return end
-    if gs.vampiricStrike then return end
-
-    return spell:Cast()
-end)
-
--- actions.san_fishing+=/death_coil,if=buff.sudden_doom.react&talent.doomed_bidding|set_bonus.tww2_4pc&buff.essence_of_the_blood_queen.at_max_stacks&talent.frenzied_bloodthirst&!buff.vampiric_strike.react
-DeathCoil:Callback("sanFishing", function(spell)
-    if player:Buff(buffs.suddenDoom) and player:TalentKnown(DoomedBidding.id) or player:Has4Set() and player:HasBuffCount(buffs.essenceOfTheBloodQueen) >= 7 and player:TalentKnown(FrenziedBloodthirst.id) and not gs.vampiricStrike then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.san_fishing+=/soul_reaper,if=target.health.pct<=35&fight_remains>5
-SoulReaper:Callback("sanFishing", function(spell)
-    if A.IsInPvP then
-        if target.hp <= A.GetToggle(2, "soulReaperHP") then
-            return spell:Cast(target)
+    for _, buffID in ipairs(checkDmgBuffsfromEnemy) do
+        if Unit(target):IsBuffUp(buffID, true) and Unit(target):GetRange() <= 5 and not Unit(target):IsHealer() then
+            if imtarget() then
+                if A.AntiMagicZone:IsReadyByPassCastGCD() then
+                    return true
+                end
+                
+                if A.AntiMagicShell:IsReadyByPassCastGCD() and A.AntiMagicZone:GetCooldown() > 5 and Unit(player):HealthPercent() <= 90 then
+                    return true
+                end
+            end
+            break
         end
     end
-
-    if target.hp <= 35 and gs.fightRemains > 5000 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.san_fishing+=/death_coil,if=!buff.vampiric_strike.react
-DeathCoil:Callback("sanFishing2", function(spell)
-    if gs.vampiricStrike then return end
-
-    return spell:Cast(target)
-end)
-
--- actions.san_fishing+=/wound_spender,if=(debuff.festering_wound.stack>=3-pet.abomination.active&cooldown.apocalypse.remains>variable.apoc_timing)|buff.vampiric_strike.react
-ScourgeStrike:Callback("sanFishing2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
     
-    if gs.vampiricStrike then 
-        return spell:Cast(target)
-    end
-
-    if target:HasDeBuffCount(debuffs.festeringWound, true) >= 3 - num(gs.abomActive) and Apocalypse.cd > gs.apocTiming then
-        return spell:Cast(target)
-    end
-end)
-
-ClawingShadows:Callback("sanFishing2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if gs.vampiricStrike then 
-        return spell:Cast(target)
-    end
-
-    if target:HasDeBuffCount(debuffs.festeringWound, true) >= 3 - num(gs.abomActive) and Apocalypse.cd > gs.apocTiming then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.san_fishing+=/festering_strike,if=debuff.festering_wound.stack<3-pet.abomination.active
-FesteringStrike:Callback("sanFishing", function(spell)
-    if target:HasDeBuffCount(debuffs.festeringWound, true) >= 3 - num(gs.abomActive) then
-        return spell:Cast(target)
-    end
-end)
-
-local function sanFishing()
-    ScourgeStrike("sanFishing")
-    ClawingShadows("sanFishing")
-    DeathandDecay("sanFishing")
-    Defile("sanFishing")
-    DeathCoil("sanFishing")
-    SoulReaper("sanFishing")
-    DeathCoil("sanFishing2")
-    ScourgeStrike("sanFishing2")
-    ClawingShadows("sanFishing2")
-    FesteringStrike("sanFishing")
+    return false
 end
 
----------------------
----Sanlayn ST--------
----------------------
--- actions.san_st=any_dnd,if=!death_and_decay.ticking&talent.unholy_ground&cooldown.dark_transformation.remains<5
-DeathandDecay:Callback("sanSt", function(spell)
-    if player:TalentKnown(Defile.id) then return end
+local enemyBuffs = {
+    107574, -- Avatar
+    207289, -- Unholy Assault
+    51271,  -- Pillar of Frost
+    106951, -- Berserk
+    162264, -- Metamorphosis
+    191427, -- Metamorphosis
+    1719,   -- Recklessness
+    13750,  -- Adrenaline Rush
+    19574,  -- Bestial Wrath
+    137639, -- Storm E W
+    375087, -- Dragon Rage
+    288613, -- Trueshot
+    360952, -- Coordinated Assault
+	359844,	-- Call of the Wild
+	31884,	-- Avenging Wrath
+    185313, -- Shadow Dance
+    114051, -- Ascendance
+    102560, -- Boomie Incarn
+    190319, -- Combustion
+	12472,	-- Icy Veins
+    102543, -- Feral Incarn
+}
 
-    if not DeathStrike:InRange(target) then return end
-    if player.stayTime < A.GetToggle(2, "DNDTimer") then return end
-
-    if gs.dndTicking then return end
-    if not player:TalentKnown(UnholyGround.id) then return end
-    if DarkTransformation.cd >= 5000 and makBurst() then return end
-
-    return spell:Cast()
-end)
-
-Defile:Callback("sanSt", function(spell)
-    if not player:TalentKnown(Defile.id) then return end
-
-    if not DeathStrike:InRange(target) then return end
-    if player.stayTime < A.GetToggle(2, "DNDTimer") then return end
-
-    if gs.dndTicking then return end
-    if not player:TalentKnown(UnholyGround.id) then return end
-    if DarkTransformation.cd >= 5000 and makBurst() then return end
-
-    return spell:Cast()
-end)
-
--- actions.san_st+=/wound_spender,if=buff.infliction_of_sorrow.up
-ScourgeStrike:Callback("sanSt", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-
-    if not player:Buff(buffs.inflictionOfSorrow) then return end
-
-    return spell:Cast(target)
-end)
-
-ClawingShadows:Callback("sanSt", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if not player:Buff(buffs.inflictionOfSorrow) then return end
-
-    return spell:Cast(target)
-end)
-
--- actions.san_st+=/death_coil,if=buff.sudden_doom.react&buff.gift_of_the_sanlayn.remains&(talent.doomed_bidding|talent.rotten_touch)|rune<3&!buff.runic_corruption.up|set_bonus.tww2_4pc&runic_power>80|buff.gift_of_the_sanlayn.up&buff.essence_of_the_blood_queen.at_max_stacks&talent.frenzied_bloodthirst&set_bonus.tww2_4pc&buff.winning_streak.at_max_stacks&rune<=3&buff.essence_of_the_blood_queen.remains>3
-DeathCoil:Callback("sanSt", function(spell)
-    if player:Buff(buffs.suddenDoom) and player:Buff(buffs.giftOfTheSanlayn) and (player:TalentKnown(DoomedBidding.id) or player:TalentKnown(RottenTouch.id)) then
-        return spell:Cast(target)
-    end
-
-    if gs.runes < 3 and not player:Buff(buffs.runicCorruption) then
-        return spell:Cast(target)
-    end
-
-    if player:Has4Set() and player.runicPower > 80 then
-        return spell:Cast(target)
-    end
-
-    if player:Buff(buffs.giftOfTheSanlayn) and player:HasBuffCount(buffs.essenceOfTheBloodQueen) >= 7 and player:TalentKnown(FrenziedBloodthirst.id) and player:Has4Set() and player:HasBuffCount(buffs.winningStreak) >= 10 and gs.runes <= 3 and player:BuffRemains(buffs.essenceOfTheBloodQueen) > 3000 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.san_st+=/wound_spender,if=buff.vampiric_strike.react&debuff.festering_wound.stack>=1|buff.gift_of_the_sanlayn.up|talent.gift_of_the_sanlayn&buff.dark_transformation.up&buff.dark_transformation.remains<gcd
-ScourgeStrike:Callback("sanSt2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if gs.vampiricStrike and target:Debuff(debuffs.festeringWound, true) then
-        return spell:Cast(target)
-    end
-
-    if player:Buff(buffs.giftOfTheSanlayn) then
-        return spell:Cast(target)
-    end
-
-    if player:TalentKnown(GiftoftheSanlayn.id) and pet:Buff(buffs.darkTransformation) and pet:BuffRemains(buffs.darkTransformation) < A.GetGCD() * 1000 then
-        return spell:Cast(target)
-    end
-end)
-
-ClawingShadows:Callback("sanSt2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if gs.vampiricStrike and target:Debuff(debuffs.festeringWound, true) then
-        return spell:Cast(target)
-    end
-
-    if player:Buff(buffs.giftOfTheSanlayn) then
-        return spell:Cast(target)
-    end
-
-    if player:TalentKnown(GiftoftheSanlayn.id) and pet:Buff(buffs.darkTransformation) and pet:BuffRemains(buffs.darkTransformation) < A.GetGCD() * 1000 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.san_st+=/soul_reaper,if=target.health.pct<=35&!buff.gift_of_the_sanlayn.up&fight_remains>5
-SoulReaper:Callback("sanSt", function(spell)
-    if A.IsInPvP then
-        if target.hp <= A.GetToggle(2, "soulReaperHP") then
-            return spell:Cast(target)
+local function iceboundFortitudePvP()
+    local locData = C_LossOfControl.GetActiveLossOfControlData(1)
+    if not locData then return false end
+    for _, buffID in ipairs(enemyBuffs) do
+        if Unit("target"):IsBuffUp(buffID, true) and locData and (locData.locType == "STUN" or locData.locType == "STUN_MECHANIC") and locData.timeRemaining > 2 and UnitIsUnit("player", "targettarget") then
+            return true
         end
     end
-
-    if target.hp <= 35 and not player:Buff(buffs.giftOfTheSanlayn) and gs.fightRemains > 5000 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.san_st+=/festering_strike,if=(debuff.festering_wound.stack=0&cooldown.apocalypse.remains<variable.apoc_timing)|(talent.gift_of_the_sanlayn&!buff.gift_of_the_sanlayn.up|!talent.gift_of_the_sanlayn)&(buff.festering_scythe.react|debuff.festering_wound.stack<=1)
-FesteringStrike:Callback("sanSt", function(spell)
-    if (not target:Debuff(debuffs.festeringWound, true) and Apocalypse.cd < gs.apocTiming) or (player:TalentKnown(GiftoftheSanlayn.id) and not player:Buff(buffs.giftOfTheSanlayn) or not player:TalentKnown(GiftoftheSanlayn.id)) and (not player:Buff(buffs.festeringScythe) or target:HasDeBuffCount(debuffs.festeringWound, true) <= 1) then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.san_st+=/wound_spender,if=(!talent.apocalypse|cooldown.apocalypse.remains>variable.apoc_timing)&(debuff.festering_wound.stack>=3-pet.abomination.active|buff.vampiric_strike.react)
-ScourgeStrike:Callback("sanSt3", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if (not player:TalentKnown(Apocalypse.id) or Apocalypse.cd > gs.apocTiming) and (target:HasDeBuffCount(debuffs.festeringWound, true) >= 3 - num(gs.abomActive) or gs.vampiricStrike) then
-        return spell:Cast(target)
-    end
-end)
-
-ClawingShadows:Callback("sanSt3", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if (not player:TalentKnown(Apocalypse.id) or Apocalypse.cd > gs.apocTiming) and (target:HasDeBuffCount(debuffs.festeringWound, true) >= 3 - num(gs.abomActive) or gs.vampiricStrike) then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.san_st+=/death_coil,if=!variable.pooling_runic_power&debuff.death_rot.remains<gcd|(buff.sudden_doom.react&debuff.festering_wound.stack>=1|rune<2)
-DeathCoil:Callback("sanSt2", function(spell)
-    if not gs.poolingRunicPower and target:DebuffRemains(debuffs.deathRot, true) < A.GetGCD() * 1000 then
-        return spell:Cast(target)
-    end
-
-    if player:Buff(buffs.suddenDoom) and target:HasDeBuffCount(debuffs.festeringWound, true) >= 1 then
-        return spell:Cast(target)
-    end
-
-    if gs.runes < 2 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.san_st+=/wound_spender,if=debuff.festering_wound.stack>4
-ScourgeStrike:Callback("sanSt4", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if target:HasDeBuffCount(debuffs.festeringWound, true) > 4 then
-        return spell:Cast(target)
-    end
-end)
-
-ClawingShadows:Callback("sanSt4", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if target:HasDeBuffCount(debuffs.festeringWound, true) > 4 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.san_st+=/death_coil,if=!variable.pooling_runic_power
-DeathCoil:Callback("sanSt3", function(spell)
-    if gs.poolingRunicPower then return end
-
-    return spell:Cast(target)
-end)
-
-local function sanSt()
-    DeathandDecay("sanSt")
-    Defile("sanSt")
-    ScourgeStrike("sanSt")
-    ClawingShadows("sanSt")
-    DeathCoil("sanSt")
-    ScourgeStrike("sanSt2")
-    ClawingShadows("sanSt2")
-    SoulReaper("sanSt")
-    FesteringStrike("sanSt")
-    ScourgeStrike("sanSt3")
-    ClawingShadows("sanSt3")
-    DeathCoil("sanSt2")
-    ScourgeStrike("sanSt4")
-    ClawingShadows("sanSt4")
-    DeathCoil("sanSt3")
 end
 
---------------------------
----ST---------------------
---------------------------
-
--- actions.st=soul_reaper,if=target.health.pct<=35&fight_remains>5
-SoulReaper:Callback("st", function(spell)
-    if A.IsInPvP then
-        if target.hp <= A.GetToggle(2, "soulReaperHP") then
-            return spell:Cast(target)
-        end
-    end
-
-    if target.hp <= 35 and gs.fightRemains > 5000 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.st+=/wound_spender,if=debuff.chains_of_ice_trollbane_slow.up
-ScourgeStrike:Callback("st", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
+local function lichbornePvP()
+    local locData = C_LossOfControl.GetActiveLossOfControlData(1)
+    if not locData then return false end
     
-    if target:Debuff(debuffs.chainsOfIceTrollbane, true) then
-        return spell:Cast(target)
-    end
-end)
-
-ClawingShadows:Callback("st", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
+    if locData.locType ~= "FEAR" and locData.locType ~= "FEAR_MECHANIC" and locData.locType ~= "DISORIENT" and locData.locType ~= "SLEEP" then return false end
     
-    if target:Debuff(debuffs.chainsOfIceTrollbane, true) then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.st+=/any_dnd,if=talent.unholy_ground&!buff.death_and_decay.up&(pet.apoc_ghoul.active|pet.abomination.active|pet.gargoyle.active)
-DeathandDecay:Callback("st", function(spell)
-    if player:TalentKnown(Defile.id) then return end
-
-    if not DeathStrike:InRange(target) then return end
-    if player.stayTime < A.GetToggle(2, "DNDTimer") then return end
-
-    if not player:TalentKnown(UnholyGround.id) then return end
-    if player:Buff(buffs.deathAndDecay) then return end
-
-    if gs.apocActive or gs.abomActive or gs.gargActive or not makBurst() then
-        return spell:Cast()
-    end
-end)
-
-Defile:Callback("st", function(spell)
-    if not player:TalentKnown(Defile.id) then return end
+    if locData.timeRemaining < 2 then return false end
     
-    if not DeathStrike:InRange(target) then return end
-    if player.stayTime < A.GetToggle(2, "DNDTimer") then return end
-
-    if not player:TalentKnown(UnholyGround.id) then return end
-    if player:Buff(buffs.deathAndDecay) then return end
-
-    if gs.apocActive or gs.abomActive or gs.gargActive or not makBurst() then
-        return spell:Cast()
-    end
-end)
-
--- actions.st+=/death_coil,if=!variable.pooling_runic_power&variable.spend_rp|fight_remains<10
-DeathCoil:Callback("st", function(spell)
-    if not gs.poolingRunicPower and gs.spendRp then
-        return spell:Cast(target)
-    end
-
-    if gs.fightRemains < 10000 then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.st+=/festering_strike,if=debuff.festering_wound.stack<4&(!variable.pop_wounds|buff.festering_scythe.react)
-FesteringStrike:Callback("st", function(spell)
-    if target:HasDeBuffCount(debuffs.festeringWound, true) < 4 and (not gs.popWounds or player:Buff(buffs.festeringScythe)) then
-        return spell:Cast(target)
-    end
-end)
-
--- actions.st+=/wound_spender,if=variable.pop_wounds
-ScourgeStrike:Callback("st2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
+    if Unit(player):IsBuffUp(8143, true) then return false end -- Tremor Totem
     
-    if not gs.popWounds then return end
-
-    return spell:Cast(target)
-end)
-
-ClawingShadows:Callback("st2", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
+    ----if not UnitIsUnit("player", "targettarget") then return false end
     
-    if not gs.popWounds then return end
-
-    return spell:Cast(target)
-end)
-
--- actions.st+=/death_coil,if=!variable.pooling_runic_power
-DeathCoil:Callback("st2", function(spell)
-    if gs.poolingRunicPower then return end
-
-    return spell:Cast(target)
-end)
-
--- actions.st+=/wound_spender,if=!variable.pop_wounds&debuff.festering_wound.stack>=4
-ScourgeStrike:Callback("st3", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-    
-    if gs.popWounds then return end
-    
-    if target:HasDeBuffCount(debuffs.festeringWound, true) >= 4 then
-        return spell:Cast(target)
-    end
-end)
-
-ClawingShadows:Callback("st3", function(spell)
-    if not DeathStrike:InRange(target) then return end
-
-    if gs.runes < 1 then return end
-
-    if gs.popWounds then return end
-    
-    if target:HasDeBuffCount(debuffs.festeringWound, true) >= 4 then
-        return spell:Cast(target)
-    end
-end)
-
-local function st()
-    SoulReaper("st")
-    ScourgeStrike("st")
-    ClawingShadows("st")
-    DeathandDecay("st")
-    Defile("st")
-    DeathCoil("st")
-    FesteringStrike("st")
-    ScourgeStrike("st2")
-    ClawingShadows("st2")
-    DeathCoil("st2")
-    ScourgeStrike("st3")
-    ClawingShadows("st3")
+    return true
 end
 
---------------------------
----PvP--------------------
---------------------------
+local function imSilenced()
+    local locData = C_LossOfControl.GetActiveLossOfControlData(1)
+    if not locData then return false end
+    
+    if locData.locType ~= "SILENCE" and locData.locType ~= "SILENCE_MECHANIC" then return false end
+    
+    return true
+end
 
-local function stunWithGnaw()
-    local gnawStun = {
-        [198013] = true, -- Eye Beam
-        [452497] = true, -- Abyssal Stare
-        [443028] = true, -- Celestial Conduit
-        [443038] = true, -- Celestial Conduit
+local function deathsChargePvP()
+    if not IsPlayerSpell(A.DeathChargeTalent.ID) then return false end
+    
+    local locData = C_LossOfControl.GetActiveLossOfControlData(1)
+    if not locData then return false end
+    
+    if locData.locType ~= "ROOT" then return false end
+    if locData.timeRemaining <= 0.5 then return false end
+    if Unit(player):IsBuffUp(A.DeathCharge.ID) then return false end
+    
+    return true
+end
+
+local function wraithwalkPvP()
+    local locData = C_LossOfControl.GetActiveLossOfControlData(1)
+    if not locData then return false end
+    
+    if locData.locType ~= "ROOT" then return false end
+    if locData.timeRemaining <= 1 then return false end
+    
+    return true
+end
+
+--[[
+local function scaryBuff()
+    local enemyBuffs = {
+        107574, -- Avatar
+        207289, -- Unholy Assault
+        51271,  -- Pillar of Frost
+        106951, -- Berserk
+        162264, -- Metamorphosis
+        1719,   -- Recklessness
+        13750,  -- Adrenaline Rush
+        19574,  -- Bestial Wrath
+        137639, -- Storm E W
+        375087, -- Dragon Rage
+        121471, -- Shadow Blade
+        288613, -- Trueshot
+        360952, -- Coordinated Assault
     }
 
-    if not target or not target.castOrChannelInfo then
-        return false
+    for _, buffID in ipairs(enemyBuffs) do
+        if Unit("target"):IsBuffUp(buffID, true) then
+            return true
+        end
     end
-
-    local casting = target.castOrChannelInfo
-    return gnawStun[casting.spellId] or false
 end
 
-DeathGrip:Callback("pvp", function(spell)
-    if not target.player then return end
-    if target.hp > A.GetToggle(2, "pvpDeathGripHP") then return end
-    if target.distance < A.GetToggle(2, "pvpDeathGripDist") then return end
-    if target.ccImmune then return end
-    if target:BuffFrom(MakLists.dontGrip) then return end
-    if target:DebuffFrom(MakLists.zerkRoot) then return end
-    if target:Buff(buffs.deathsAdvance) then return end
+local function bigBoyPrints()
+    local locData = C_LossOfControl.GetActiveLossOfControlData(1)
+    local locType = "None"
+    local locRemaining = 0
+    if locData then locType = locData.locType end
+    if locData then locRemaining = locData.timeRemaining end
 
-    return spell:Cast(target)
-end)
+    MakPrint(1, "LoC Type: ", locType)
+    MakPrint(2, "LoC Duration: ", locRemaining)
+    MakPrint(3, "Scary Buff: ", scaryBuff())
+    MakPrint(4, "Should Use IF: ", iceboundFortitudePvP())
+    MakPrint(5, "Death Charge Learned: ", IsPlayerSpell(A.DeathChargeTalent.ID))
+    MakPrint(6, "Death's Advance ready: ", A.DeathsAdvance:IsReadyByPassCastGCD())
+    MakPrint(7, "Should Use Death Charge: ", deathsChargePvP())
+end]]
 
-ChainsofIce:Callback("pvp", function(spell)
-    if not target.player then return end
-    if target.hp < 15 then return end
-    if target.hp > A.GetToggle(2, "pvpCOIHP") then return end
-    if target.distance < A.GetToggle(2, "pvpCOIDist") then return end
-    if target.ccImmune then return end
+--#####################################################################################################################################################################################
 
-    local _, runSpeed = GetUnitSpeed(target:CallerId())
-    if runSpeed < 100 then return end
-    if target:DebuffFrom(MakLists.slowed) then return end
-
-    return spell:Cast(target)
-end)
-
-local function pvpenis()
-    DeathGrip("pvp")
-    ChainsofIce("pvp")
+local function CanUseRunicPowerAoe()
+    if Player:Rune() >= 6 or (GetToggle(2, "Checkbox4") and Unit(player):IsBuffUp(A.SuddenDoomBuff.ID)) then return false end
+    
+    return A.SummonGargoyle:GetSpellTimeSinceLastCast() < 25 or Player:RunicPowerDeficit() < 35 or Unit(player):IsBuffUp(A.SuddenDoomBuff.ID)
 end
 
-MakuluFramework.firstLoop = true
-A[3] = function(icon)
-    if MakuluFramework.firstLoop then
-        MakuluFramework.firstLoop = false
-        Action.SetToggle({1, "AutoAttack", "Auto Attack: "}, false)
-        Action.SetToggle({1, "AutoShoot", "Auto Shoot: "}, false)
+--#####################################################################################################################################################################################
+
+local function CanUseRunicPowerST()
+    if Player:Rune() >= 6 or (GetToggle(2, "Checkbox4") and Unit(player):IsBuffUp(A.SuddenDoomBuff.ID)) then return false end
+    
+    return A.SummonGargoyle:GetSpellTimeSinceLastCast() < 25 or Player:RunicPowerDeficit() < 35 or Unit(player):IsBuffUp(A.SuddenDoomBuff.ID)
+end
+
+--#####################################################################################################################################################################################
+
+local function CanUseRunicPowerCap()
+    if Player:Rune() >= 6 or (GetToggle(2, "Checkbox4") and Unit(player):IsBuffUp(A.SuddenDoomBuff.ID)) then return false end
+    
+    return Player:RunicPowerDeficit() < 15 or Unit(player):IsBuffUp(A.SuddenDoomBuff.ID)
+end
+
+--#####################################################################################################################################################################################
+
+local function CanUseDoomburst()
+    if not A.Doomburst:IsTalentLearned() then return true end
+    
+    if GetToggle(2, "Checkbox4") then
+        if A.Apocalypse:GetCooldown() < A.GetCurrentGCD() * 2 and Unit("target"):IsDebuffStacks(A.FesteringWoundDebuff.ID) >= 4 then
+            return false
+        end
+        
+        if Unit("target"):IsDebuffStacks(A.FesteringWoundDebuff.ID, true) >= 2 or Player:Rune() < 2 then
+            return true
+        end
+    else
+        return true
     end
     
-    FrameworkStart(icon)
-    updategs()
+    return false
+end
 
-    if A.GetToggle(2, "makDebug") then
-        MakPrint(1, "Active Enemies: ", gs.activeEnemies)
-        MakPrint(2, "Epidemic Targets: ", gs.epidemicTargets)
-        MakPrint(3, "Pooling Runic Power: ", gs.poolingRunicPower)
-        MakPrint(4, "Spend Runic Power: ", gs.spendRp)
-        MakPrint(5, "DnD Ticking: ", gs.dndTicking)
-        MakPrint(6, "aoeBurst: ", gs.dndTicking or player:Buff(buffs.deathAndDecay) and gs.woundCount >= (gs.activeEnemies / 2))
-        MakPrint(7, "aoeSetup: ", not gs.dndTicking and gs.dndCd < 10000)
-        MakPrint(8, "Runes: ", gs.runes)
-        MakPrint(9, "Active Abomination: ", gs.abomActive)
-        MakPrint(10, "DnD cooldown: ", gs.dndCd)
-        MakPrint(11, "Sanlayn: ", gs.sanlayn)
-        MakPrint(12, "Wound Count: ", gs.woundCount)
+--#####################################################################################################################################################################################
+
+local function CanPrepareArenaBurst()
+    if not GetToggle(2, "Checkbox4") or not CDsON() then return false end
+    
+    return A.Apocalypse:GetCooldown() <= A.GetCurrentGCD() * 2 and Unit("target"):IsDebuffStacks(A.FesteringWoundDebuff.ID, true) < 4 and not A.UnholyAssault:IsReadyByPassCastGCD() --and A.DarkTransformation:GetCooldown() < 2
+end
+
+--#####################################################################################################################################################################################
+
+local function CanUseDeathStrike()
+    return Unit("target"):IsCastingRemains(A.FistofFury1.ID) == 0 and Unit("target"):IsCastingRemains(A.FistofFury2.ID) == 0
+end
+
+--################################################################################################################################################################################################################
+
+A[1] = function(icon)
+    if A.AntiFakeCC1:GetCooldown() == 0 then return A.AntiFakeCC1:Show(icon) end
+end
+
+A[2] = function(icon)
+    local castLeft, _, _, _, notKickAble = Unit(target):IsCastingRemains()
+    if castLeft > 0 then
+        --AntiFakeKick
+        if A.AntiFakeKick:IsReadyByPassCastGCD(target) and not notKickAble then return A.AntiFakeKick:Show(icon) end
+        
+        --QuakingPalm
+        if A.QuakingPalm:IsRacialReadyP(target, nil, nil, true) then return A.QuakingPalm:Show(icon) end
+        
+        --Haymaker
+        if A.Haymaker:IsRacialReadyP(target, nil, nil, true) then return A.Haymaker:Show(icon) end
+        
+        --WarStomp
+        if A.WarStomp:IsRacialReadyP(target, nil, nil, true) then return A.WarStomp:Show(icon) end
+        
+        --BullRush
+        if A.BullRush:IsRacialReadyP(target, nil, nil, true) then return A.BullRush:Show(icon) end
     end
+end
 
-    if player.channeling then return end
-	
-    makInterrupt(interrupts)
-    util()
+--##################################################################################################################################################################################### 
 
-    if player.combat then
-        defensives()
+A[3] = function(icon)
+    RotationsVariables()
+    --Cancel WraithWalk
+    if Unit(player):IsBuffUp(A.WraithWalk.ID) and LoC:Get("ROOT") == 0 and Unit(player):IsDebuffDown(Root_Debuff) then return A.WraithWalk:Show(icon) end
+    
+    --bigBoyPrints()
+    
+    if imSilenced() then
+        if (A.FesteringStrike:IsReadyByPassCastGCD(unitID) or A.FesteringScythe:IsReadyByPassCastGCD(unitID)) and Player:Rune() >= 2 and CanAttackTargetPhysical(unitID) then return A.FesteringStrike:Show(icon) end
+        if A.DeathStrike:IsReadyByPassCastGCD(target) and CanAttackTargetPhysical(unitID) then return A.DeathStrike:Show(icon) end
     end
-
-    if target.exists and target.canAttack and DeathCoil:InRange(target) then
-
-        if A.IsInPvP then
-            pvpenis()
-
-            if A.Gnaw:IsReadyByPassCastGCD("target") then
-                if not target.physImmune and target.stunDr > 0.5 and pet:Buff(buffs.darkTransformation) then
-                    if target.hp < 25 or stunWithGnaw() then
-                        return A.Gnaw:Show(icon)
-                    end
-                end
-            end
-        end
-
-        if makBurst() then
-            racials()
-
-            if pet:Buff(buffs.darkTransformation) then
-                --[[if Trinket(1, "Damage") then Trinket1() end
-                if Trinket(2, "Damage") then Trinket2() end]]
-                if A.Trinket1:IsReady() then return A.Trinket1:Show(icon) end
-                if A.Trinket2:IsReady() then return A.Trinket2:Show(icon) end
-            end
+    
+    --From Scuzz, added by Trip 22 December 2024
+    if A.IceboundFortitude:IsReadyByPassCastGCD() and iceboundFortitudePvP() then return A.IceboundFortitude:Show(icon) end 
+    
+    --From Scuzz, added by Trip 13 January 2025
+    if A.Lichborne:IsReadyByPassCastGCD() and lichbornePvP() then return A.Lichborne:Show(icon) end    
+    
+    local CantCast = CantCast()
+    if CantCast then return false end
+    
+    --From Scuzz, added by Trip 15 January 2025
+    if A.DeathsAdvance:IsReadyByPassCastGCD() and deathsChargePvP() then return A.DeathCharge:Show(icon) end
+    
+    --WraithWalk
+    if A.WraithWalk:IsReadyByPassCastGCD() and wraithwalkPvP() then return A.WraithWalk:Show(icon) end
+    
+    local CanPrepareArenaBurst = CanPrepareArenaBurst()
+    
+    -- Mouseover Raise Ally
+    if A.RaiseAlly:IsReadyByPassCastGCD(mouseover) and A.MouseHasFrame() and Unit(mouseover):IsDead() and Unit(mouseover):IsPlayer() then return A.RaiseAlly:Show(icon) end
+    
+    if combatTime == 0 then
+        
+    else
+        local avoid_Overlap = Unit(player):IsBuffDown(A.Lichborne.ID) and Unit(player):IsBuffDown(A.DeathPact.ID)
+        
+        --DeathStrike >650k last 4 secs
+        if A.DeathStrike:IsReadyByPassCastGCD(target) and Unit(player):HasBuffs(A.BloodforgeArmor.ID) < 0.3 and Unit(target):IsBuffDown(Full_Immune_Buffs) and Unit(target):IsBuffDown(Phys_Immune_Buffs) and Unit(player):GetLastTimeDMGX(4) > GetToggle(2, "DeathStrikeSliderSpecial") and CanUseDeathStrike() then return A.DeathStrike:Show(icon) end
+        
+        --SacrificialPact
+        if A.SacrificialPact:IsReadyByPassCastGCD() and UnitExists("pet") and Unit("pet"):HealthPercent() > 0 and avoid_Overlap and PlayerHealth <= GetToggle(2, "SacrificialPactSlider") then return A.SacrificialPact:Show(icon) end
+        
+        --DeathPact
+        if A.DeathPact:IsReadyByPassCastGCD() and avoid_Overlap and PlayerHealth <= GetToggle(2, "DeathPactSlider") then return A.DeathPact:Show(icon) end
+        
+        --IceboundFortitude
+        if A.IceboundFortitude:IsReadyByPassCastGCD() and PlayerHealth <= GetToggle(2, "IceboundFortitudeSlider") then return A.IceboundFortitude:Show(icon) end
+        
+        --AntiMagicShell Debuff Remove
+        if ((not A.SpellWarden:IsTalentLearned() and A.AntiMagicShell:IsReadyByPassCastGCD() and tempSpellCooldown(A.AntiMagicShell.ID) < .3) or (A.SpellWarden:IsTalentLearned() and A.AntiMagicShellSW:IsReadyByPassCastGCD() and tempSpellCooldown(A.AntiMagicShellSW.ID) < .3)) and A.UnyieldingWill:IsTalentLearned() and Unit(player):IsBuffDown(A.AntiMagicZone.ID) and Unit(player):IsDebuffUp(AMS_Dispell) then return A.AntiMagicShell:Show(icon) end
+        
+        --AntiMagicShell Debuff Absorb
+        if ((not A.SpellWarden:IsTalentLearned() and A.AntiMagicShell:IsReadyByPassCastGCD() and tempSpellCooldown(A.AntiMagicShell.ID) < .3) or (A.SpellWarden:IsTalentLearned() and A.AntiMagicShellSW:IsReadyByPassCastGCD() and tempSpellCooldown(A.AntiMagicShellSW.ID) < .3)) and Unit(player):IsBuffDown(A.AntiMagicZone.ID) and (AutoAntiMagicZonePvp() or Unit(player):IsDebuffUp(AMS_Debufftable) or PlayerHealth <= GetToggle(2, "AntiMagicShellSlider")) then return A.AntiMagicShell:Show(icon) end
+        
+        --AntiMagicShell Buff Counter
+        if ((not A.SpellWarden:IsTalentLearned() and A.AntiMagicShell:IsReadyByPassCastGCD() and tempSpellCooldown(A.AntiMagicShell.ID) < .3) or (A.SpellWarden:IsTalentLearned() and A.AntiMagicShellSW:IsReadyByPassCastGCD() and tempSpellCooldown(A.AntiMagicShellSW.ID) < .3)) and Unit(player):IsBuffDown(A.AntiMagicZone.ID) and Unit(target):IsBuffUp(AMS_Bufftable) and Unit(target):GetRange() <= 5 then return A.AntiMagicShell:Show(icon) end
+        
+        --AntiMagicZone
+        if A.AntiMagicZone:IsReadyByPassCastGCD() and Unit(player):IsBuffDown(A.AntiMagicShell.ID) and (AutoAntiMagicZonePvp() or PlayerHealth <= GetToggle(2, "AntiMagicZoneSlider")) then return A.AntiMagicZone:Show(icon) end
+        
+        --Lichborne
+        if A.Lichborne:IsReadyByPassCastGCD() and avoid_Overlap and PlayerHealth <= GetToggle(2, "LichborneSlider") then return A.Lichborne:Show(icon) end
+        
+        --Deathcoil Player
+        if GetToggle(2, "lichborneHealing") and A.DeathCoilPlayer:IsReadyByPassCastGCD(player) and Unit(player):IsBuffDown(A.DeathPact.ID) and Unit(player):IsBuffUp(A.Lichborne.ID) and PlayerHealth <= 90 then return A.DeathCoilPlayer:Show(icon) end
+        
+        --DarkSuccor
+        if A.DeathStrike:IsReadyByPassCastGCD(target) and Unit(player):HasBuffs(A.BloodforgeArmor.ID) < 0.3 and Unit(target):IsBuffDown(Full_Immune_Buffs) and Unit(target):IsBuffDown(Phys_Immune_Buffs) and avoid_Overlap and Unit(player):IsBuffUp(A.DarkSuccor.ID) and PlayerHealth <= 85 and CanUseDeathStrike() then return A.DeathStrike:Show(icon) end
+        
+        --DeathStrike
+        if A.DeathStrike:IsReadyByPassCastGCD(target) and Unit(player):HasBuffs(A.BloodforgeArmor.ID) < 0.3 and Unit(target):IsBuffDown(Full_Immune_Buffs) and Unit(target):IsBuffDown(Phys_Immune_Buffs) and avoid_Overlap and PlayerHealth <= GetToggle(2, "DeathStrikeSlider") and CanUseDeathStrike() then return A.DeathStrike:Show(icon) end
+        
+        --[[DeathsAdvance
+        if A.DeathsAdvance:IsReadyByPassCastGCD() and Unit(player):IsBuffDown(A.DeathsAdvance.ID) and Unit(player):IsBuffDown(A.WraithWalk.ID) and IsUnitEnemy(target) and not A.MindFreeze:IsSpellInRange("target") and movingTime >= 3 then return A.DeathsAdvance:Show(icon) end]] --Asked to remove and replace with Death Charge
+        
+        --Trinket Stuff for Scuzz
+        if A.PvpTrinket1:GetCooldown() == 0 and Unit(player):IsDebuffUp(A.Garrote.ID) and Unit(player):IsDebuffUp(A.CheapShot.ID) then return A.Trinket2:Show(icon) end
+        if A.PvpTrinket2:GetCooldown() == 0 and Unit(player):IsDebuffUp(A.Garrote.ID) and Unit(player):IsDebuffUp(A.CheapShot.ID) then return A.Trinket2:Show(icon) end
+    end
+    
+    --RaiseDead
+    if A.RaiseDead:IsReadyByPassCastGCD() and (not UnitExists("pet") or Unit("pet"):HealthPercent() <= 0) then return A.RaiseDead:Show(icon) end
+    
+    ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    local function Cooldowns()
+        
+        local activeDarkTransformation = (A.DarkTransformation:GetSpellTimeSinceLastCast() < 15)
+        local readyDarkTransformation = (A.DarkTransformation:GetCooldown() == 0 or not A.DarkTransformation:IsTalentLearned())
+        local readyApocalypse = (A.Apocalypse:GetCooldown() == 0 or not A.Apocalypse:IsTalentLearned())
+        
+        if GetToggle(2, "Checkbox4") then
+            --ArmyoftheDead
+            if A.ArmyoftheDead:IsReadyByPassCastGCD() and not A.RaiseAbomination:IsTalentLearned() and readyApocalypse then return A.ArmyoftheDead:Show(icon) end
             
-            local damagePotion = Action.GetToggle(2, "damagePotion")
-            local potionLustOnly = Action.GetToggle(2, "potionLustOnly")
-            local potionExhausted = Action.GetToggle(2, "potionExhausted")
-            local potionExhaustedSlider = Action.GetToggle(2, "potionExhaustedSlider")
-            local damagePotionObject = Action.DetermineUsableObject("player", nil, nil, true, nil, A.FleetingR1, A.FleetingR2, A.FleetingR3, A.TemperedR1, A.TemperedR2, A.TemperedR3, A.PotionofUnwaveringFocus1, A.PotionofUnwaveringFocus2, A.PotionofUnwaveringFocus3)
-
-            if damagePotionObject and damagePotion and ((potionLustOnly and player.bloodlust) or (potionExhausted and player:SatedRemains() > potionExhaustedSlider * 60000) or not potionLustOnly) then
-                local shouldPot = gs.activeEnemies >= 1 and (not player:TalentKnown(SummonGargoyle.id) or SummonGargoyle.cd > 60000) and (pet:Buff(buffs.darkTransformation) and pet:BuffRemains(buffs.darkTransformation) < 30000 or gs.armyActive and gs.armyRemains <= 30000 or gs.apocActive and gs.apocRemains <= 30000 or gs.abomActive and gs.abomRemains <= 30000 or gs.fightRemains <= 30000) or gs.fightRemains <= 30000
-                if shouldPot then
-                    return damagePotionObject:Show(icon)
+            --EmpowerRuneWeapon
+            if A.EmpowerRuneWeapon:IsReadyByPassCastGCD() and readyApocalypse then return A.EmpowerRuneWeapon:Show(icon) end
+            
+            --AbominationLimb
+            if A.AbominationLimb:IsReadyByPassCastGCD() and A.AbominationLimb:IsTalentLearned() and CanAttackTargetMagical(unitID) and Unit(unitID):GetRange() <= 5 and readyApocalypse then return A.AbominationLimb:Show(icon) end
+            
+            --SummonGargoyle
+            if A.SummonGargoyle:IsReadyByPassCastGCD() and readyApocalypse then return A.SummonGargoyle:Show(icon) end
+            
+            --RaiseAbomination
+            if A.RaiseAbomination:IsReadyByPassCastGCD() and A.RaiseAbomination:IsTalentLearned() and tempSpellCooldown(A.RaiseAbomination.ID) < .3 and Unit(unitID):GetRange() <= 5 and readyApocalypse then return A.RaiseAbomination:Show(icon) end
+            
+            --DarkTransformation
+            if A.DarkTransformation:IsReadyByPassCastGCD() and not A.Apocalypse:IsTalentLearned() and UnitExists("pet") and Unit("pet"):HealthPercent() > 0 then return A.DarkTransformation:Show(icon) end
+            
+            --UnholyAssault
+            if A.UnholyAssault:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and readyApocalypse and FesterStacks <= 3 then return A.UnholyAssault:Show(icon) end
+            
+            --Apocalypse
+            if A.Apocalypse:IsReadyByPassCastGCD() and A.Apocalypse:IsTalentLearned() and CanAttackTargetMagical(unitID) and FesterStacks >= 1 then return A.Apocalypse:Show(icon) end
+        else
+            --ArmyoftheDead
+            if A.ArmyoftheDead:IsReadyByPassCastGCD() and not A.RaiseAbomination:IsTalentLearned() and readyApocalypse then return A.ArmyoftheDead:Show(icon) end
+            
+            --EmpowerRuneWeapon
+            if A.EmpowerRuneWeapon:IsReadyByPassCastGCD() and readyApocalypse then return A.EmpowerRuneWeapon:Show(icon) end
+            
+            --AbominationLimb
+            if A.AbominationLimb:IsReadyByPassCastGCD() and A.AbominationLimb:IsTalentLearned() and CanAttackTargetMagical(unitID) and Unit(unitID):GetRange() <= 5 and readyApocalypse then return A.AbominationLimb:Show(icon) end
+            
+            --SummonGargoyle
+            if A.SummonGargoyle:IsReadyByPassCastGCD() and readyApocalypse then return A.SummonGargoyle:Show(icon) end
+            
+            --DarkTransformation | UnholyBlight
+            if A.DarkTransformation:IsReadyByPassCastGCD() and not A.Apocalypse:IsTalentLearned() and UnitExists("pet") and Unit("pet"):HealthPercent() > 0 then return A.DarkTransformation:Show(icon) end
+            
+            --UnholyBlight
+            --if A.UnholyBlight:IsReadyByPassCastGCD() and CanAttackTargetMagical(unitID) and Unit(unitID):IsBuffDown(Magic_Immune_UnholyBlight) and IsInMeleeRange then return A.UnholyBlight:Show(icon) end (depreciated)
+            
+            --UnholyAssault
+            if A.UnholyAssault:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and readyApocalypse and FesterStacks <= 3 then return A.UnholyAssault:Show(icon) end
+            
+            --Apocalypse
+            if A.Apocalypse:IsReadyByPassCastGCD() and A.Apocalypse:IsTalentLearned() and CanAttackTargetMagical(unitID) and FesterStacks >= GetToggle(2, "FesterStacksSlider") then return A.Apocalypse:Show(icon) end
+        end
+    end
+    
+    ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    local function AoE()
+        --PVE Epidemic | DeathCoil
+        --A.Epidemic:IsTalentLearned()
+        if 1 == 1 then
+            if A.Epidemic:IsReadyByPassCastGCD() and CanAttackTargetMagical(unitID) and Unit(unitID):IsDebuffUp(A.VirulentPlagueDebuff.ID) and (CanUseRunicPowerAoe() or Unit(player):IsBuffUp(A.SuddenDoomBuff.ID)) then return A.Epidemic:Show(icon) end
+        else
+            if A.DeathCoil:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and CanUseRunicPowerAoe() then return A.DeathCoil:Show(icon) end
+        end
+        
+        if FesterStacks < GetToggle(2, "FesterStacksSlider") or CanPrepareArenaBurst then
+            --FesteringStrike
+            if (A.FesteringStrike:IsReadyByPassCastGCD(unitID) or A.FesteringScythe:IsReadyByPassCastGCD(unitID)) and CanAttackTargetPhysical(unitID) then return A.FesteringStrike:Show(icon) end
+        else
+            if Unit(player):IsBuffDown(A.SuddenDoomBuff.ID) then
+                --DeathAndDecay | VileContagion
+                if A.DeathAndDecay:IsReadyByPassCastGCD() and CanAttackTargetMagical(unitID) and isStaying and (Unit(player):IsBuffDown({A.DeathAndDecayBuff.ID, A.DefileDebuff.ID}) and (Unit(unitID):IsDebuffUp(A.FesteringWoundDebuff.ID, true)) or GetToggle(2, "FesterStacksSlider") < 1) then
+                    if CDsON() and A.VileContagion:IsReadyByPassCastGCD() and CanAttackTargetMagical(unitID) then return A.VileContagion:Show(icon) end 
+                    return A.DeathAndDecay:Show(icon)
                 end
+                
+                --Wound Spender
+                if WoundSpender:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) then return WoundSpender:Show(icon) end
             end
         end
-
-        cdsShared()
-
-        if gs.shouldAoE then
-            if gs.sanlayn then
-                if gs.activeEnemies >= 3 then
-                    cdsAoESan()
-                end
-                if gs.activeEnemies == 2 then
-                    cdsCleaveSan()
-                end
-                if gs.activeEnemies <= 1 then
-                    cdsSan()
-                end
-            else
-                if gs.activeEnemies >= 2 then
-                    cdsAoE()
-                else
-                    cds()
-                end
-            end
-
-            if gs.activeEnemies >= 3 then
-                if gs.dndTicking or player:Buff(buffs.deathAndDecay) and gs.woundCount >= (gs.activeEnemies / 2) then
-                    aoeBurst()
-                else
-                    if not gs.dndTicking and gs.dndCd < 10000 then
-                        aoeSetup()
-                    else
-                        aoe()
-                    end
-                end
-            end
-
-            if gs.activeEnemies == 2 then
-                cleave()
+        
+        --Filler
+        if 1 == 1 then
+            if A.Epidemic:IsReadyByPassCastGCD() and CanAttackTargetMagical(unitID) and Unit(unitID):IsDebuffUp(A.VirulentPlagueDebuff.ID) and CanUseDoomburst() then return A.Epidemic:Show(icon) end
+        else
+            if A.DeathCoil:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and CanUseDoomburst() then return A.DeathCoil:Show(icon) end
+        end
+    end
+    
+    ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    local function Generic()
+        
+        --DeathCoil
+        if A.DeathCoil:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and CanUseRunicPowerCap() then return A.DeathCoil:Show(icon) end
+        
+        if FesterStacks < GetToggle(2, "FesterStacksSlider") or CanPrepareArenaBurst then
+            --FesteringStrike
+            if (A.FesteringStrike:IsReadyByPassCastGCD(unitID) or A.FesteringScythe:IsReadyByPassCastGCD(unitID)) and CanAttackTargetPhysical(unitID) then return A.FesteringStrike:Show(icon) end
+        else
+            if Unit(player):IsBuffDown(A.SuddenDoomBuff.ID) then
+                --Wound Spender
+                if WoundSpender:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) then return WoundSpender:Show(icon) end
             end
         end
-
-        if gs.activeEnemies <= 1 or not gs.shouldAoE then
-            if gs.sanlayn then
-                if player:TalentKnown(GiftoftheSanlayn.id) and DarkTransformation.cd > 500 and not player:Buff(buffs.giftOfTheSanlayn) and player:BuffRemains(buffs.essenceOfTheBloodQueen) < DarkTransformation.cd + 3000 then
-                    sanFishing()
-                end
-                sanSt()
-            else
-                st()
-            end
+        
+        --DeathCoil
+        if A.DeathCoil:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and CanUseRunicPowerST() then return A.DeathCoil:Show(icon) end
+        
+        --DeathCoil Filler
+        if A.DeathCoil:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) --[[and CanUseDoomburst()]] then return A.DeathCoil:Show(icon) end
+    end
+    
+    ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    local function APL()
+        --AOE Check
+        if GetToggle(2, "AoE") then AoEUnits = MultiUnits:GetBySpell(A.MindFreeze) else AoEUnits = 1 end
+        
+        -- Set WoundSpender and AnyDnD
+        WoundSpender = (A.ClawingShadows:IsTalentLearned() and A.ClawingShadows or A.ScourgeStrike)
+        
+        AnyDnD = A.DeathAndDecay
+        if A.Defile:IsTalentLearned() then
+            AnyDnD = A.Defile
         end
+        
+        -- Check our stacks of Festering Wounds
+        FesterStacks = Unit(unitID):IsDebuffStacks(A.FesteringWoundDebuff.ID, true)
+        FesterRefreshable = Unit(unitID):IsDebuffDown(A.FesteringWoundDebuff.ID, true)
+        
+        -- call_action_list,name=cooldowns
+        if CDsON() and IsInMeleeRange and CanAttackTargetMagical(unitID) then
+            local ShouldReturn = Cooldowns(); if ShouldReturn then return ShouldReturn; end
+        end
+        
+        -- Pvp
+        if GetToggle(2, "Checkbox4") then
+            local ShouldReturn = Generic(); if ShouldReturn then return ShouldReturn; end
+        end
+        
+        -- run_action_list,name=aoe,if=active_enemies>=4
+        if AoEUnits >= 3 then
+            local ShouldReturn = AoE(); if ShouldReturn then return ShouldReturn; end
+        else
+            local ShouldReturn = Generic(); if ShouldReturn then return ShouldReturn; end
+        end
+    end
+    
+    ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    local function DamageRotation(unitID)
+        local CantDamage = Unit("target"):IsDead() or Unit("target"):IsBuffUp("TotalImun") or Unit("target"):InLOS() or Unit("target"):IsBuffUp(Full_Immune_Buffs) or Unit("player"):IsDebuffUp(410126)
+        if CantDamage then return false end
+        
+        --Special Targets
+        if (A.Zone == "arena" or A.Zone == "pvp") and not Unit(unitID):IsPlayer() then
+            local ShouldReturn = Generic(); if ShouldReturn then return ShouldReturn; end
+        end
+        
+        if (A.Zone == "arena" or A.Zone == "pvp") and not Unit(unitID):IsPlayer() then
+            return false
+        end
+        
+        --Interrupts
+        local Interrupt = Interrupts(unitID)
+        if Interrupt then return Interrupt:Show(icon) end
+        
+        --Use Items & Racials
+        local UseItems = UseItems()
+        if UseItems and CDsON() and Unit(player):IsBuffUp(A.DarkTransformation.ID) then return UseItems:Show(icon) end
+        
+        --Grip Target 
+        if A.DeathGrip:IsReadyByPassCastGCD(unitID) and CanAttackTargetPhysical(unitID) and pvp_Toggle and (GetToggle(2, "DeathGripDropdown") == "1" or GetToggle(2, "DeathGripDropdown") == "3") 
+        and Unit(unitID):IsBuffDown(CC_Immune_Buffs)
+        and Unit(unitID):IsPlayer() 
+        and Unit(unitID):IsBuffDown(DontGripMe) 
+        and Unit(unitID):IsDebuffDown(Root_Debuff) 
+        and Unit(unitID):IsBuffDown(A.DeathsAdvance.ID) 
+        and Unit(unitID):HealthPercent() < GetToggle(2, "TargetHealthSlider") 
+        and Unit(unitID):GetRange() >= 10
+        and not A.MindFreeze:IsSpellInRange(unitID) 
+        then 
+            return A.DeathGrip:Show(icon) 
+        end
+        
+        --Gnaw Stun Target Health < 25% - Eye Beam - Abyssal Stare - Celestial Conduit
+        if A.Gnaw:IsReadyByPassCastGCD(unitID) and CanAttackTargetPhysical(unitID) and Unit(unitID):GetDR("stun") >= 50 and Unit(pet):IsBuffUp(A.DarkTransformation.ID) and GnawAsStun(unitID) and Unit(unitID):InCC() == 0 then return A.Gnaw:Show(icon) end
+        
+        --DarkTransformation for Scuzz
+        if A.DarkTransformation:IsReadyByPassCastGCD() and CDsON() and UnitExists("pet") and Unit("pet"):HealthPercent() > 0 and GetToggle(2, "Checkbox4") and not A.Apocalypse:IsTalentLearned() and A.MindFreeze:IsSpellInRange(unitID) then return A.DarkTransformation:Show(icon) end
+        
+        --UnholyBlight
+        --if A.UnholyBlight:IsReadyByPassCastGCD() and CanAttackTargetMagical(unitID) and Unit(unitID):IsBuffDown(Magic_Immune_UnholyBlight) and GetToggle(2, "Checkbox4") and IsInMeleeRange then return A.UnholyBlight:Show(icon) end
+        
+        --Outbreak
+        if A.Outbreak:IsReadyByPassCastGCD(unitID) and not (A.UnholyBlight:IsTalentLearned() and A.DarkTransformation:IsReadyByPassCastGCD()) and not (A.Apocalypse:IsTalentLearned() and A.Apocalypse:IsReadyByPassCastGCD()) and CanAttackTargetMagical(unitID) and Unit(unitID):IsDebuffDown(A.VirulentPlagueDebuff.ID, true) and ((not GetToggle(2, "Checkbox4")) or (GetToggle(2, "Checkbox4") and (Unit(unitID):HealthPercent() > 10 and not (Unit(unitID):IsBuffUp(DOT_Immune_Table)) or not A.MindFreeze:IsSpellInRange(unitID)))) then return A.Outbreak:Show(icon) end
+        
+        --Outbreak
+        if A.Outbreak:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and Unit(unitID):IsDebuffDown(A.VirulentPlagueDebuff.ID, true) and ((not GetToggle(2, "Checkbox4")) or (GetToggle(2, "Checkbox4") and (Unit(unitID):HealthPercent() > 10 and Unit(unitID):GetRange() >= 1 and not (Unit(unitID):IsBuffUp(DOT_Immune_Table)) or not A.MindFreeze:IsSpellInRange(unitID)))) then return A.Outbreak:Show(icon) end
+        
+        --Plaguebringer
+        if A.ScourgeStrike:IsReadyByPassCastGCD(unitID) and A.ScourgeStrike:IsSpellInRange(unitID) and CanAttackTargetPhysical(unitID) --[[and Unit(target):IsDebuffUp(A.FesteringWoundDebuff.ID, true)]] and GetToggle(2, "Checkbox1") and A.Plaguebringer:IsTalentLearned() and Unit(player):HasBuffs(A.Plaguebringer.ID) < A.GetGCD() then return A.ScourgeStrike:Show(icon) end
+        
+        --SoulReaper
+        if A.SoulReaper:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and Unit(unitID):HealthPercent() <= GetToggle(2, "soulReaperHP") and Unit(unitID):HealthPercent() > 15 then return A.SoulReaper:Show(icon) end
+        
+        --Blinding Sleet
+        if A.BlindingSleet:IsReadyByPassCastGCD() and CanAttackTargetMagical(unitID) and pvp_Toggle and MultiUnits:GetBySpell(A.FesteringStrike) >= 2 and Unit(unitID):HealthPercent() <= 40 then return A.BlindingSleet:Show(icon) end
+        
+        -- ChainsofIce
+        if A.ChainsofIce:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and CanSlow() and Unit(unitID):GetRange() >= 3 and Unit(unitID):HealthPercent() >= 20 then return A.ChainsofIce:Show(icon) end
+        
+        if APL() then
+            return true
+        end
+        
+        --Wound Spender out of range
+        if WoundSpender:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and FesterStacks >= GetToggle(2, "FesterStacksSlider") then return WoundSpender:Show(icon) end
+        
+        --Wound Spender out of range
+        if WoundSpender:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and Unit(unitID):GetRange() >= 6 then return WoundSpender:Show(icon) end
+    end
+    
+    ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    --Damage Rotation
+    if A.IsUnitEnemy(target) then unitID = target if DamageRotation(unitID) then return true end end
+end
+
+--################################################################################################################################################################################################################
+
+-- Hunter CC debuffs for SpellWarden healer protection
+local HunterCCDebuffs = {
+    213691, -- Scatter Shot
+    24394,  -- Intimidation
+    117526, -- Binding Shot
+}
+
+
+local function PartyRotation(icon, unitID)
+
+	if A.SpellWarden:IsTalentLearned() and A.AntiMagicShellSW:IsReady(unitID) and Unit(unitID):IsHealer() and Unit(unitID):HasDeBuffs(HunterCCDebuffs) >= 1 then 
+		return A.DarkSimulacrum:Show(icon)
+	end
 
     end
 
-    return FrameworkEnd()
+--################################################################################################################################################################################################################
+
+local function ArenaRotation(icon, unitID)
+    if Player:IsMounted() or Player:IsStealthed() or not Unit(unitID):IsPlayer() or Unit(unitID):IsBuffUp(Full_Immune_Buffs) then return false end
+    
+    ------------------------------------
+    --- STUNS TARGET
+    ------------------------------------
+    if UnitIsUnit(unitID, target) and Unit(unitID):IsBuffDown(CC_Immune_Buffs) then
+        --Asphyxiate Stun Target Health < 45%
+        if GetToggle(2, "AsphyxiateDropdown") == "4" then
+            if A.Asphyxiate:IsReadyByPassCastGCD(unitID) and CanAttackTargetPhysical(unitID) and Unit(unitID):GetDR("stun") >= 50 and Unit(unitID):HealthPercent() <= 45 then return A.Asphyxiate:Show(icon) end
+        end
+        
+        --Strangulate Stun Target Health < 35%
+        if GetToggle(2, "StrangulateDropdown") == "4" then
+            if A.Strangulate:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and Unit(unitID):GetDR("silence") >= 50 and Unit(unitID):IsBuffDown(378444) and Unit(unitID):HealthPercent() <= 35 then return A.Strangulate:Show(icon) end
+        end
+        
+        --Gnaw Stun Target Health < 25%
+        if A.Gnaw:IsReadyByPassCastGCD(unitID) and CanAttackTargetPhysical(unitID) and Unit(unitID):GetDR("stun") >= 50 and Unit(pet):IsBuffUp(A.DarkTransformation.ID) and GnawAsStun(unitID) and Unit(unitID):InCC() == 0 then return A.Gnaw:Show(icon) end
+    end
+    
+    ------------------------------------
+    --- CC
+    ------------------------------------
+    --Asphyxiate Auto/HealerCC
+    if ((GetToggle(2, "AsphyxiateDropdown") == "1") or (GetToggle(2, "AsphyxiateDropdown") == "3")) then
+        if A.Asphyxiate:IsReadyByPassCastGCD(unitID) and CanAttackTargetPhysical(unitID) and Unit(unitID):IsBuffDown(CC_Immune_Buffs) and CCHealerInArenaDps(unitID, 45, 0, "stun", true, true) then return A.Asphyxiate:Show(icon) end
+    end
+    
+    --Strangulate Auto/HealerCC
+    if ((GetToggle(2, "StrangulateDropdown") == "1") or (GetToggle(2, "StrangulateDropdown") == "3")) then
+        if A.Strangulate:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and Unit(unitID):IsBuffDown(CC_Immune_Buffs) and Unit(unitID):IsBuffDown(378444) and CCHealerInArenaDps(unitID, 35, 0, "silence", true, true) then return A.Strangulate:Show(icon) end
+    end
+    
+    ------------------------------------
+    --- KICKS
+    ------------------------------------
+    --MindFreeze
+    if CanKickArenaMagical(unitID) then
+        if A.MindFreeze:IsReadyByPassCastGCD(unitID) and Unit(unitID):IsBuffDown(A.GroundingTotem.ID) then return A.MindFreeze:Show(icon) end
+    end
+    
+    --Leap Kick
+    if CanKickArenaPhysical(unitID) then
+        if A.Leap:IsReadyByPassCastGCD(unitID) and Unit(pet):IsBuffUp(A.DarkTransformation.ID) and UnitIsUnit(unitID, target) and Unit(pet):IsDebuffDown(Root_Debuff) then return A.Leap:Show(icon) end
+    end
+    
+    --Asphyxiate Kick
+    if CanKickArenaPhysical(unitID) and Unit(unitID):IsBuffDown(CC_Immune_Buffs) and ((GetToggle(2, "AsphyxiateDropdown") == "1") or (GetToggle(2, "AsphyxiateDropdown") == "2")) then
+        if A.Asphyxiate:IsReadyByPassCastGCD(unitID) and Unit(unitID):GetDR("stun") >= 50 then return A.Asphyxiate:Show(icon) end
+    end
+    
+    --Strangulate Kick
+    if CanKickArenaMagical(unitID) and Unit(unitID):IsBuffDown(CC_Immune_Buffs) and ((GetToggle(2, "StrangulateDropdown") == "1") or (GetToggle(2, "StrangulateDropdown") == "2")) then
+        if A.Strangulate:IsReadyByPassCastGCD(unitID) and Unit(unitID):GetDR("silence") >= 50 and Unit(unitID):IsBuffDown(378444) then return A.Strangulate:Show(icon) end
+    end
+    
+    --DeathGrip Kick
+    if CanKickArenaPhysical(unitID) and Unit(unitID):IsBuffDown(CC_Immune_Buffs) then
+        if (GetToggle(2, "DeathGripDropdown") == "1" or GetToggle(2, "DeathGripDropdown") == "2") then
+            if A.DeathGrip:IsReadyByPassCastGCD(unitID) and Unit(unitID):IsBuffDown(DontGripMe) and Unit(unitID):IsDebuffDown(Root_Debuff) then return A.DeathGrip:Show(icon) end
+        end
+    end
+    
+    --Gnaw Kick
+    if CanKickArenaPhysical(unitID) and Unit(unitID):IsBuffDown(CC_Immune_Buffs) then
+        if A.Gnaw:IsReadyByPassCastGCD(unitID) and Unit(unitID):GetDR("stun") >= 50 and Unit(pet):IsBuffUp(A.DarkTransformation.ID) and Unit(unitID):InCC() == 0 then return A.Gnaw:Show(icon) end
+    end
+
+
 end
 
-local enemyRotation = function(enemy)
-	if not enemy.exists then return end
-
-end
-
-local partyRotation = function(friendly)
-    if not friendly.exists then return end
-
-end
+--################################################################################################################################################################################################################
 
 A[6] = function(icon)
-	RegisterIcon(icon)
-    partyRotation(party1)
-    enemyRotation(arena1)
+    --Stopcast Function from Globals
+    if NeedStopCast() then 
+        return A.StopCast:Show(icon)
+    end
+    
+    --Multi Dot
+    if GetToggle(2, "Checkbox2") and MultiUnits:GetBySpell(A.FesteringStrike) > 1 and combatTime > 0 then
+        if Unit(target):IsBoss() or MultiUnits:GetBySpell(A.FesteringStrike) == 1 or A.TargetEnemy:IsSuspended(0.5, 0.1) then 
+            return false 
+        end
+        
+        if ActiveUnitPlates and Unit(target):IsDebuffUp(A.FesteringWoundDebuff.ID, true) then
+            for MultiDot_UnitID in pairs(ActiveUnitPlates) do
+                if A.FesteringStrike:IsReadyByPassCastGCD(MultiDot_UnitID) and Unit(MultiDot_UnitID):IsDebuffRefreshable(A.FesteringWoundDebuff.ID, true) then 
+                    return A.TargetEnemy:Show(icon)
+                elseif not A.FesteringStrike:IsInRange(target) and MultiUnits:GetBySpell(A.FesteringStrike) > 1 then 
+                    return A.TargetEnemy:Show(icon)
+                end
+            end
+        end
+        if MultiUnits:GetBySpell(A.FesteringStrike) > 1 and not A.FesteringStrike:IsInRange(target) then
+            return A.TargetEnemy:Show(icon) 
+        end
+    end
 
-    if A.GetToggle(2, "AutoInterrupt") and targetForInterrupt(interrupts) then return TabTarget() end
-    if autoTarget() then return TabTarget() end
-
-	return FrameworkEnd()
+	if PartyRotation(icon, "party1") or ArenaRotation(icon, "arena1") then
+		return true
+	end
 end
+
+--################################################################################################################################################################################################################
 
 A[7] = function(icon)
-	RegisterIcon(icon)
-    partyRotation(party2)
-    enemyRotation(arena2)
-
-	return FrameworkEnd()
+	if PartyRotation(icon, "party2") or ArenaRotation(icon, "arena2") then
+		return true
+	end
+    
+    --Stun 1
+    if A.Asphyxiate:IsReadyByPassCastGCD(focus) and Unit(focus):IsBuffDown(CC_Immune_Buffs) and Unit(focus):IsBuffDown(Phys_Immune_Buffs) and Unit(focus):GetDR("stun") >= 50 and Unit(focus):HasDeBuffs(Active_CC_Debuffs) < 0.6 then return A.AntiFakeCC1:Show(icon) end
+    
+    --Stun 2
+    if A.Strangulate:IsReadyByPassCastGCD(focus) and Unit(focus):IsBuffDown(CC_Immune_Buffs) and Unit(focus):IsBuffDown(378444) and Unit(focus):GetDR("silence") >= 50 and Unit(focus):HasDeBuffs(Active_CC_Debuffs) < 0.2 then return A.AntiFakeCC3:Show(icon) end
+    
 end
+
+--################################################################################################################################################################################################################
 
 A[8] = function(icon)
-	RegisterIcon(icon)
-    partyRotation(party3)
-    enemyRotation(arena3)
-
-	return FrameworkEnd()
+	if PartyRotation(icon, "party3") or ArenaRotation(icon, "arena3") then
+		return true
+	end
+    
 end
 
-A[9] = function(icon)
-	RegisterIcon(icon)
-    partyRotation(party4)
-
-	return FrameworkEnd()
-end
-
-A[10] = function(icon)
-	RegisterIcon(icon)
-    partyRotation(player)
-
-	return FrameworkEnd()
-end
+--################################################################################################################################################################################################################
+-- NOTES
+--################################################################################################################################################################################################################
+-- [1] is AntiFake CC rotation (limited, usually is single color like 0x00FF00 which is green)
+-- [2] is AntiFake Kick rotation (racial, primary specialization interrupt spell)
+-- [3] is Rotation (old launcher called it Single, supports all actions)
+-- [4] is Secondary (old launcher called it AoE) rotation (supports all actions)
+-- [5] is Trinket rotation (racial, specialization's spells which can remove CC)
+-- [6] is Passive rotation (limited actions, usually @raid1, @party1, @arena1 and additional binds - for more info look notes in the launcher)
+-- [7] is Passive rotation (limited actions, usually @raid2, @party2, @arena2)
+-- [8] is Passive rotation (limited actions, usually @raid3, @party3, @arena3)
+--Passive rotation doesn't require START button use like it does [1] -> [5] rotations

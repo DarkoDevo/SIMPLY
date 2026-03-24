@@ -2,188 +2,173 @@
   "files": [
     {
       "name": "MakuluFramework Base",
-      "path": "./MakuluFramework/Base.lua",
+      "path": "../MakuluFramework/Base.lua",
       "order": 0.1
     },
     {
       "name": "LibRange 2.0",
-      "path": "./#General/LibRangeCheck-2.0.lua",
+      "path": "../MakuluFramework/ExternalLibs/LibRangeCheck-2.0.lua",
       "order": 0.2
     },
     {
       "name": "MakuluFamework Linked Table",
-      "path": "./MakuluFramework/Core/DataStructures/LinkedTable.lua",
+      "path": "../MakuluFramework/Core/DataStructures/LinkedTable.lua",
       "order": 0.2
     },
     {
       "name": "MakuluFamework KDTree",
-      "path": "./MakuluFramework/Core/DataStructures/KDTree.lua",
+      "path": "../MakuluFramework/Core/DataStructures/KDTree.lua",
       "order": 0.2
     },
     {
       "name": "MakuluFramework Cache",
-      "path": "./MakuluFramework/Cache.lua",
+      "path": "../MakuluFramework/Cache.lua",
       "order": 0.3
     },
     {
       "name": "MakuluFramework UI",
-      "path": "./MakuluFramework/UI.lua",
+      "path": "../MakuluFramework/UI.lua",
       "order": 0.4
     },
     {
       "name": "MakuluFramework Commands",
-      "path": "./MakuluFramework/Core/Commands.lua",
+      "path": "../MakuluFramework/Core/Commands.lua",
       "order": 0.4
     },
     {
       "name": "MakuluFramework Lists",
-      "path": "./MakuluFramework/Lists.lua",
+      "path": "../MakuluFramework/Lists.lua",
       "order": 0.5
     },
     {
       "name": "MakuluFramework Frame",
-      "path": "./MakuluFramework/Core/Frame.lua",
+      "path": "../MakuluFramework/Core/Frame.lua",
       "order": 0.7
     },
     {
       "name": "MakuluFramework Events",
-      "path": "./MakuluFramework/Core/Events.lua",
+      "path": "../MakuluFramework/Core/Events.lua",
       "order": 0.8
     },
     {
       "name": "MakuluFramework Dr Tracker",
-      "path": "./MakuluFramework/Core/DrTracker.lua",
+      "path": "../MakuluFramework/Core/DrTracker.lua",
       "order": 0.9
     },
     {
       "name": "MakuluFramework Utils",
-      "path": "./MakuluFramework/Utils.lua",
+      "path": "../MakuluFramework/Utils.lua",
       "order": 1.5
     },
     {
       "name": "MakuluFramework Unit",
-      "path": "./MakuluFramework/Unit.lua",
+      "path": "../MakuluFramework/Unit.lua",
       "order": 1.1
     },
     {
       "name": "MakuluFramework PVPUnits",
-      "path": "./MakuluFramework/UnitPvp.lua",
+      "path": "../MakuluFramework/UnitPvp.lua",
       "order": 1.4
     },
     {
       "name": "MakuluFramework PVEUnits",
-      "path": "./MakuluFramework/UnitPve.lua",
+      "path": "../MakuluFramework/UnitPve.lua",
       "order": 1.3
     },
     {
       "name": "MakuluFramework Const Units",
-      "path": "./MakuluFramework/ConstUnits.lua",
+      "path": "../MakuluFramework/ConstUnits.lua",
       "order": 1.2
     },
     {
       "name": "MakuluFramework Spell",
-      "path": "./MakuluFramework/Spell.lua",
+      "path": "../MakuluFramework/Spell.lua",
       "order": 1.5
     },
     {
       "name": "MakuluFramework MultiUnit",
-      "path": "./MakuluFramework/MultiUnits.lua",
+      "path": "../MakuluFramework/MultiUnits.lua",
       "order": 1.6
     },
     {
       "name": "MakuluFramework Arena State",
-      "path": "./MakuluFramework/ArenaState.lua",
+      "path": "../MakuluFramework/ArenaState.lua",
       "order": 1.7
     },
     {
       "name": "MakuluFramework Damage Tracker",
-      "path": "./MakuluFramework/DamageTracker.lua",
+      "path": "../MakuluFramework/DamageTracker.lua",
       "order": 1.0
     },
     {
-      "name": "Berserkers Global Spells",
-      "path": "./#BerserkersStuff/#General/GlobalSpells.lua",
-      "order": 1.8
-    },
-    {
-      "name": "Berserkers Globals",
-      "path": "./#BerserkersStuff/#General/Globals.lua",
-      "order": 1.9
-    },
-    {
       "name": "MakuluFramework World",
-      "path": "./MakuluFramework/World.lua",
+      "path": "../MakuluFramework/World.lua",
       "order": 2.0
     },
     {
       "name": "MakuluFramework Core",
-      "path": "./MakuluFramework/Root.lua",
+      "path": "../MakuluFramework/Root.lua",
       "order": 2.1
     },
     {
       "name": "Makulu Globals",
-      "path": "./Makulu_Globals.lua",
+      "path": "../MakuluFramework/Makulu_Globals.lua",
       "order": 2.2
     },
     {
       "name": "MakuluCore",
-      "path": "./#General/MakuluLGlobals.lua",
+      "path": "../MakuluFramework/MakuluLGlobals.lua",
       "order": 2.3
     },
     {
       "name": "MakuluFramework CD Tracker",
-      "path": "./MakuluFramework/Events/UnitCdTracker.lua",
+      "path": "../MakuluFramework/Events/UnitCdTracker.lua",
       "order": 2.4
     },
     {
       "name": "MakuluFramework Chat",
-      "path": "./MakuluFramework/Modules/Chat.lua",
+      "path": "../MakuluFramework/Modules/Chat.lua",
       "order": 2.5
     },
     {
       "name": "MakuluFramework Fake Casting",
-      "path": "./MakuluFramework/Modules/MakuluFakeCast.lua",
+      "path": "../MakuluFramework/Modules/MakuluFakeCast.lua",
       "order": 2.6
     },
     {
       "name": "MakuluFramework PMultiplier",
-      "path": "./MakuluFramework/Modules/MakuluPMult.lua",
+      "path": "../MakuluFramework/Modules/MakuluPMult.lua",
       "order": 2.7
     },
-        {
+    {
       "name": "MakuluFramework Spec Tracker",
-      "path": "./MakuluFramework/Modules/SpecListener.lua",
+      "path": "../MakuluFramework/Modules/SpecListener.lua",
       "order": 2.7
     },
     {
       "name": "MakuluFramework BossMods",
-      "path": "./MakuluFramework/BossMods.lua",
+      "path": "../MakuluFramework/BossMods.lua",
       "order": 2.8
     },
     {
       "name": "MakuluFramework Sequence",
-      "path": "./MakuluFramework/Sequence.lua",
+      "path": "../MakuluFramework/Sequence.lua",
       "order": 2.9
     },
     {
       "name": "MakuluFramework Plates",
-      "path": "./MakuluFramework/NamePlater.lua",
+      "path": "../MakuluFramework/NamePlater.lua",
       "order": 5
     },
     {
       "name": "MakuluFramework All the Units",
-      "path": "./MakuluFramework/GglAllTheUnits.lua",
+      "path": "../MakuluFramework/GglAllTheUnits.lua",
       "order": 7
     },
     {
       "name": "MakuluFramework Lockout Tracker",
-      "path": "./MakuluFramework/Events/LockoutTracker.lua",
+      "path": "../MakuluFramework/Events/LockoutTracker.lua",
       "order": 7
-    },
-    {
-      "name": "MRT Integration",
-      "path": "./MakuluFramework/Modules/MRTIntegration.lua",
-      "order": 1.8
     }
   ]
 }
