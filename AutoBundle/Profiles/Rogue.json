@@ -1,0 +1,25 @@
+{
+    "name": "Rogue",
+    "files": [
+      {
+        "name": "ProfileUIRogue",
+        "path": "./Rogue/#Rogue_Interface.lua",
+        "order": 1.0
+      },
+      {
+        "name": "Outlaw",
+        "path": "./Rogue/Rogue_Outlaw.lua",
+        "order": 1.2
+      },
+      {
+        "name": "Subtlety",
+        "path": "./Rogue/Rogue_Subtlety.lua",
+        "order": 1.2
+      },
+      {
+        "name": "Assassination",
+        "path": "./Rogue/TWW_Rogue_Assassination.lua",
+        "order": 1.2
+      }
+    ]
+  }

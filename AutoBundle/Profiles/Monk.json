@@ -1,0 +1,25 @@
+{
+    "name": "Monk",
+    "files": [
+        {
+            "name": "Monk_ProfileUI",
+            "path": "./Monk/ProfileUI.lua",
+            "order": 1.2
+        },
+        {
+            "name": "Brewmaster",
+            "path": "./Monk/Monk_Brewmaster.lua",
+            "order": 1.2
+        },
+        {
+            "name": "Windwalker",
+            "path": "./Monk/Monk_Windwalker.lua",
+            "order": 1.2
+        },
+        {
+            "name": "Mistweaver",
+            "path": "./Monk/Monk_Mistweaver.lua",
+            "order": 1.2
+        }
+    ]
+}

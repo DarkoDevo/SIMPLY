@@ -1,0 +1,25 @@
+{
+  "name": "Hunter",
+  "files": [
+    {
+      "name": "ProfileUIHunter",
+      "path": "./Hunter/#Hunter_Interface.lua",
+      "order": 1.0
+    },
+    {
+      "name": "Beast Mastery",
+      "path": "./Hunter/Hunter_Beastmastery.lua",
+      "order": 1.2
+    },
+    {
+      "name": "Marksmanship",
+      "path": "./Hunter/Hunter_Marksmanship.lua",
+      "order": 1.2
+    },
+    {
+      "name": "Survival",
+      "path": "./Hunter/Hunter_Survival.lua",
+      "order": 1.2
+    }
+  ]
+}

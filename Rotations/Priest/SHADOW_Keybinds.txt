@@ -1,0 +1,3 @@
+GiftofNaaru = /cast [@mouseover, nodead, exists] Devouring Plague
+Shadowmeld = /cast [@mouseover, nodead, exists] Vampiric Touch
+Stoneform = /cast [@mouseover, nodead, exists] Shadow Word: Pain

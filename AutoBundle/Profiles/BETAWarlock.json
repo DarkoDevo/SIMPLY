@@ -1,0 +1,15 @@
+{
+  "name": "BETA - Destruction",
+  "files": [
+    {
+      "name": "ProfileUIWarlock",
+      "path": "./Warlock/#Warlock_Interface.lua",
+      "order": 1.0
+    },
+    {
+      "name": "Beta - Destruction",
+      "path": "./Warlock/Warlock_Destro_BETA.lua",
+      "order": 1.2
+    }
+  ]
+}

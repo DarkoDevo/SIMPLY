@@ -1,0 +1,15 @@
+{
+    "name": "Mistweaver PVE",
+    "files": [
+        {
+            "name": "ProfileUI",
+            "path": "./ShamanElemental/ProfileUI.lua",
+            "order": 1.0
+        },
+        {
+            "name": "Windwalker",
+            "path": "./Monk/Monk_Mistweaver_PvE.lua",
+            "order": 1.1
+        }
+    ]
+}

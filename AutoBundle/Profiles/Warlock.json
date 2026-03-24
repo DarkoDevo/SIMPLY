@@ -1,0 +1,25 @@
+{
+  "name": "Warlock",
+  "files": [
+    {
+      "name": "ProfileUIWarlock",
+      "path": "./Warlock/#Warlock_Interface.lua",
+      "order": 1.0
+    },
+    {
+      "name": "Affliction",
+      "path": "./Warlock/Warlock_Affliction.lua",
+      "order": 1.2
+    },
+    {
+      "name": "Demonology",
+      "path": "./Warlock/Warlock_Demonology.lua",
+      "order": 1.2
+    },
+    {
+      "name": "Destruction",
+      "path": "./Warlock/Warlock_Destruction.lua",
+      "order": 1.2
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+    "name": "Beta SBA V 1.3",
+    "files": [
+        {
+            "name": "Beta SBA Profile UI",
+            "path": "./Beta/#BETA_ProfileUI.lua",
+            "order": 1.0
+        },
+        {
+            "name": "Beta SBA V 1.3",
+            "path": "./Beta/All_Class_Singlebutton.lua",
+            "order": 1.2
+        }
+    ]
+}  

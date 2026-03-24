@@ -1,0 +1,25 @@
+{
+    "name": "BETA - Monk",
+    "files": [
+      {
+        "name": "BetaProfileUIMonk",
+        "path": "./Monk/BETA_Profile_UI.lua",
+        "order": 1.0
+      },
+      {
+        "name": "BETA - Brewmaster",
+        "path": "./Monk/BETA_Monk_Brewmaster.lua",
+        "order": 1.15
+      },
+      {
+        "name": "BETA - Mistweaver",
+        "path": "./Monk/BETA_Monk_Mistweaver.lua",
+        "order": 1.2
+      },
+      {
+        "name": "BETA - Windwalker",
+        "path": "./Monk/BETA_Monk_Windwalker.lua",
+        "order": 1.25
+      }
+    ]
+  }

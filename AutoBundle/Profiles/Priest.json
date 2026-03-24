@@ -1,0 +1,25 @@
+{
+  "name": "Priest",
+  "files": [
+    {
+      "name": "ProfileUIPriest",
+      "path": "./Priest/#Priest_Interface.lua",
+      "order": 1.0
+    },
+    {
+      "name": "Shadow",
+      "path": "./Priest/Priest_Shadow.lua",
+      "order": 1.2
+    },
+    {
+      "name": "Holy",
+      "path": "./Priest/Priest_Holy.lua",
+      "order": 1.2
+    },
+    {
+      "name": "Discipline",
+      "path": "./Priest/Priest_Discipline.lua",
+      "order": 1.2
+    }
+  ]
+}

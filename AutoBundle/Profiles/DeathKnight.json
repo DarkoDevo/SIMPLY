@@ -1,0 +1,25 @@
+{
+    "name": "Death Knight",
+    "files": [
+        {
+            "name": "Death Knight - Profile UI",
+            "path": "./Deathknight/#Deathknight_Interface.lua",
+            "order": 1.0
+        },
+        {
+            "name": "Unholy",
+            "path": "./Deathknight/Deathknight_Unholy.lua",
+            "order": 1.1
+        },
+        {
+            "name": "Blood",
+            "path": "./Deathknight/Deathknight_Blood.lua",
+            "order": 1.1
+        },
+        {
+            "name": "Frost",
+            "path": "./Deathknight/Deathknight_Frost.lua",
+            "order": 1.1
+        }
+    ]
+}

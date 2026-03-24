@@ -1,0 +1,15 @@
+{
+    "name": "Frost",
+    "files": [
+        {
+            "name": "ProfileUI",
+            "path": "./ShamanElemental/ProfileUI.lua",
+            "order": 1.0
+        },
+        {
+            "name": "Frost",
+            "path": "./MageFrost/Frost.lua",
+            "order": 1.1
+        }
+    ]
+}

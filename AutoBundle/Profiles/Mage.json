@@ -1,0 +1,25 @@
+{
+    "name": "Mage",
+    "files": [
+      {
+        "name": "ProfileUIMage",
+        "path": "./Mage/#Mage_Interface.lua",
+        "order": 1.0
+      },
+      {
+        "name": "Fire",
+        "path": "./Mage/Mage_Fire.lua",
+        "order": 1.2
+      },
+      {
+        "name": "Arcane",
+        "path": "./Mage/Mage_Arcane.lua",
+        "order": 1.2
+      },
+      {
+        "name": "Frost",
+        "path": "./Mage/Mage_Frost.lua",
+        "order": 1.2
+      }
+    ]
+  }

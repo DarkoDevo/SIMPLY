@@ -1,0 +1,8 @@
+{
+    "name": "Monk",
+    "profiles": [
+        "Fistweaver",
+        "Brewmaster",
+        "Windwalker"
+    ]
+}

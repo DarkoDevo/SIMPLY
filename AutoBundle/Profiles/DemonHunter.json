@@ -1,0 +1,20 @@
+{
+    "name": "Demon Hunter",
+    "files": [
+        {
+            "name": "Demon Hunter - ProfileUI",
+            "path": "./Demonhunter/#Demonhunter_Interface.lua",
+            "order": 1.0
+        },
+        {
+            "name": "Vengeance",
+            "path": "./Demonhunter/TWW_Vengance.lua",
+            "order": 1.1
+        },
+        {
+            "name": "Havoc",
+            "path": "./Demonhunter/Demonhunter_Havoc.lua",
+            "order": 1.1
+        }
+    ]
+}

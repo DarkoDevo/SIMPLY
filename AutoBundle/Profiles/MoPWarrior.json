@@ -1,0 +1,15 @@
+{
+    "name": "MoP Warrior",
+    "files": [
+        {
+            "name": "MoP Warrior - ProfileUI",
+            "path": "./MOP/Warrior/Warrior_ProfileUIMoP.LUA",
+            "order": 1.0
+        },
+        {
+            "name": "Arms",
+            "path": "./MOP/Warrior/Warrior_ArmsMoP.LUA",
+            "order": 1.1
+        }
+    ]
+}

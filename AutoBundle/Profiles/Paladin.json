@@ -1,0 +1,25 @@
+{
+    "name": "Paladin",
+    "files": [
+        {
+            "name": "Paladin - ProfileUI",
+            "path": "./Paladin/#Paladin_Interface.lua",
+            "order": 1.0
+        },
+        {
+            "name": "Paladin Holy",
+            "path": "./Paladin/Paladin_Holy.lua",
+            "order": 1.1
+        },
+        {
+            "name": "Retribution",
+            "path": "./Paladin/Paladin_Retribution.lua",
+            "order": 1.1
+        },
+        {
+            "name": "Protection",
+            "path": "./Paladin/TWW_Prot_Paladin.lua",
+            "order": 1.1
+        }
+    ]
+}

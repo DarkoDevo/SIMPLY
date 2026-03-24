@@ -1,0 +1,25 @@
+{
+    "name": "Warrior",
+    "files": [
+        {
+            "name": "Warrior - ProfileUI",
+            "path": "./Warrior/#Warrior_Interface.lua",
+            "order": 1.0
+        },
+        {
+            "name": "Arms",
+            "path": "./Warrior/Warrior_Arms.lua",
+            "order": 1.1
+        },
+        {
+            "name": "Fury",
+            "path": "./Warrior/Warrior_Fury.lua",
+            "order": 1.1
+        },
+        {
+            "name": "Protection",
+            "path": "./Warrior/TWW_Warrior_Prot.lua",
+            "order": 1.1
+        }
+    ]
+}

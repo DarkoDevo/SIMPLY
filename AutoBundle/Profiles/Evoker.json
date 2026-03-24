@@ -1,0 +1,25 @@
+{
+    "name": "Evoker",
+    "files": [
+        {
+            "name": "ProfileUI",
+            "path": "./Evoker/#Evoker_Interface.lua",
+            "order": 1.0
+        },
+        {
+            "name": "Augmentation",
+            "path": "./Evoker/Evoker_Augmentation.lua",
+            "order": 1.1
+        },
+        {
+            "name": "Preservation",
+            "path": "./Evoker/Evoker_Preservation.lua",
+            "order": 1.1
+        },
+        {
+            "name": "Devastation",
+            "path": "./Evoker/Evoker_Devastation.lua",
+            "order": 1.1
+        }
+    ]
+}

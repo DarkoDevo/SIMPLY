@@ -1,0 +1,25 @@
+{
+    "name": "Shaman",
+    "files": [
+        {
+            "name": "ProfileUI",
+            "path": "./Shaman/#Shaman_Interface.lua",
+            "order": 2
+        },
+        {
+            "name": "Elemental_Main",
+            "path": "./Shaman/Shaman_Elemental.lua",
+            "order": 2.1
+        },
+        {
+            "name": "Enhancement",
+            "path": "./Shaman/Shaman_Enhancement.lua",
+            "order": 2.1
+        },
+        {
+            "name": "Restoration Shaman",
+            "path": "./Shaman/Shaman_Restoration.lua",
+            "order": 2.1
+        }
+    ]
+}

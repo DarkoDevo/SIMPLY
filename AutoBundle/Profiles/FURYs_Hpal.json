@@ -1,0 +1,15 @@
+{
+    "name": "Fury's - Hpal",
+    "files": [
+      {
+        "name": "BetaProfileUIPaladin",
+        "path": "./Paladin/#BETA_Paladin_Interface.lua",
+        "order": 1.0
+      },
+      {
+        "name": "FURYs - Holy",
+        "path": "./Paladin/TFO-Paladin-Holy-TWW.lua",
+        "order": 1.2
+      }
+    ]
+  }

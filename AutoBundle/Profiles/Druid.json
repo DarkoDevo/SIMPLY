@@ -1,0 +1,30 @@
+{
+    "name": "Druid",
+    "files": [
+      {
+        "name": "ProfileUIDruid",
+        "path": "./Druid/#Druid_Interface.lua",
+        "order": 1.0
+      },
+      {
+        "name": "Feral",
+        "path": "./Druid/Druid_Feral.lua",
+        "order": 1.2
+      },
+      {
+        "name": "Balance",
+        "path": "./Druid/Druid_Balance.lua",
+        "order": 1.2
+      },
+      {
+        "name": "Restoration",
+        "path": "./Druid/Druid_Restoration.lua",
+        "order": 1.2
+      },
+      {
+        "name": "Guardian",
+        "path": "./Druid/Druid_Guardian.lua",
+        "order": 1.2
+      }
+    ]
+  }

@@ -1,0 +1,15 @@
+{
+    "name": "MoP BETA Warlock",
+    "files": [
+        {
+            "name": "MoP Warlock - ProfileUI",
+            "path": "./MOP/Warlock/WarlockProfile_UIMoP.lua",
+            "order": 1.0
+        },
+        {
+            "name": "Affliction",
+            "path": "./MOP/Warlock/Warlock_AffMoP.lua",
+            "order": 1.1
+        }
+    ]
+}

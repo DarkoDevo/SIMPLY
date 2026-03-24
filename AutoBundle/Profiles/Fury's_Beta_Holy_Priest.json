@@ -1,0 +1,15 @@
+{
+    "name": "Fury's Beta Holy Priest",
+    "files": [
+        {
+            "name": "BETA_ProfileUI_Priest",
+            "path": "./Priest/BETA_Priest_UI.lua",
+            "order": 1.0
+        },
+        {
+            "name": "Fury's Beta Holy Priest",
+            "path": "./Priest/Meta-Priest-Holy.lua",
+            "order": 1.2
+        }
+    ]
+}
