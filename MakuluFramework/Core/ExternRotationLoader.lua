@@ -1,8 +1,6 @@
-local _, MakuluFramework = ...
+local Tinkr, MakuluFramework = ...
 
 local projectSupportingSpecs = {}
-local ipairs = ipairs
-local pairs = pairs
 
 local function loadFileList(root, project, files)
     for _, file in ipairs(files) do

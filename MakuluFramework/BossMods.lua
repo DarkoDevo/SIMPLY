@@ -2,7 +2,6 @@ local _, MakuluFramework = ...
 MakuluFramework          = MakuluFramework or _G.MakuluFramework
 
 local lists           = MakuluFramework.lists
-local pairs           = pairs
 
 --[[
     DBM Timer Integration

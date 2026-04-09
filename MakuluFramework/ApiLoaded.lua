@@ -1,16 +1,27 @@
-local MakuluFramework, files, auth, res = ...;
-local ipairs = ipairs
-local ipairs = ipairs
+local Tinkr, files, auth, res = ...
 
-if not files then
-    print('Error with loading..')
+if type(Tinkr) ~= "table" or type(files) ~= "table" then
     return
 end
 
-for _, file in ipairs(files) do
-    local code = loadstring(file)
+if type(Tinkr.Util) ~= "table" or type(Tinkr.Util.Evaluator) ~= "table" then
+    return
+end
 
-    code(MakuluFramework)
+local Evaluator = Tinkr.Util.Evaluator
+auth = type(auth) == "table" and auth or {}
+res = type(res) == "table" and res or {}
+
+local MakuluFramework = {
+    NAME = "Clipper"
+}
+
+for _, file in ipairs(files) do
+    local code = type(file) == "string" and loadstring(file)
+    if type(code) == "function" then
+        Evaluator:InjectGlobals(code)
+        code(Tinkr, MakuluFramework)
+    end
     file = ''
     code = nil
 end
@@ -39,10 +50,12 @@ if auth.local_loading then
     loadSpec()
 else
     local spec_config = {}
-    for _, file in ipairs(res.rotation_files) do
-        local code = loadstring(file)
-
-        code(MakuluFramework, spec_config)
+    for _, file in ipairs(res.rotation_files or {}) do
+        local code = type(file) == "string" and loadstring(file)
+        if type(code) == "function" then
+            Evaluator:InjectGlobals(code)
+            code(Tinkr, MakuluFramework, spec_config)
+        end
         file = ''
         code = nil
     end

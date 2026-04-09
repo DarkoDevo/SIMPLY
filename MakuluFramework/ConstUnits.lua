@@ -4,7 +4,6 @@ MakuluFramework          = MakuluFramework or _G.MakuluFramework
 local MF                 = MakuluFramework
 
 local Unit               = MakuluFramework.Unit
-local pairs              = pairs
 
 local ConstUnits         = {
     player = Unit:new('NIL_UNIT_player'),

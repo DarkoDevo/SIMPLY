@@ -15,7 +15,6 @@ end
 local ADDON_NAME = rand_str(math.random(6, 10))
 local BOUND_TAGS = 1
 local callbacks = {}
-local pairs = pairs
 
 local function register_handle(key)
 	_G["SLASH_" .. ADDON_NAME .. BOUND_TAGS] = "/" .. key

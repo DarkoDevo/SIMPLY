@@ -3,11 +3,11 @@ MakuluFramework          = MakuluFramework or _G.MakuluFramework
 
 local Unit               = MakuluFramework.Unit
 local Cache              = MakuluFramework.Cache
-local ipairs             = _G.ipairs
 
 local GetNumGroupMembers = GetNumGroupMembers
 local IsInRaid           = IsInRaid
 
+local ipairs             = ipairs
 local insert             = table.insert
 
 local PerCombatCache     = Cache:getCombatCacheCell()

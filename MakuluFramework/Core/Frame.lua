@@ -1,5 +1,5 @@
 local _, MakuluFramework = ...
-MakuluFramework = MakuluFramework or _G.MakuluFramework
+MakuluFramework = MakuluFramework or _G.MakuluFramwork
 
 local FRAME_NAME = "MAKULU_FRAME"
 local frame = nil

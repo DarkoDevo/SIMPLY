@@ -1,10 +1,9 @@
-local _, MakuluFramework = ...
+local Tinkr, MakuluFramework = ...
 
 MakuluFramework = MakuluFramework or _G.MakuluFramework or {}
 local InCombatLockdown = InCombatLockdown
 
 local GetTime = GetTime
-local pairs = pairs
 
 local Cache = MakuluFramework.Cache
 local ConstUnits = MakuluFramework.ConstUnits

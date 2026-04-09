@@ -1,8 +1,6 @@
-local _, MakuluFramework = ...
+local Tinkr, MakuluFramework = ...
 
 local spec = nil
-local GetPrimaryTalentTree = GetPrimaryTalentTree
-local GetTalentTabInfo = GetTalentTabInfo
 
 MakuluFramework.getSpec = function()
     if spec then return spec end
@@ -12,7 +10,8 @@ MakuluFramework.getSpec = function()
 end
 
 MakuluFramework.getSpecId = function()
-    local _, res = GetTalentTabInfo(MakuluFramework.getSpec())
+    local _, _, class = UnitClass("player")
+    local res, name = GetTalentTabInfo(MakuluFramework.getSpec())
 
     return res
 end

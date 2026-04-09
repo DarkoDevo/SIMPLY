@@ -1,7 +1,6 @@
-local _, MakuluFramework = ...
+local Tinkr, MakuluFramework = ...
 
 local loadedRotations = {}
-local pairs = pairs
 
 local registerRotation = function(info)
     if loadedRotations[info.spec] then

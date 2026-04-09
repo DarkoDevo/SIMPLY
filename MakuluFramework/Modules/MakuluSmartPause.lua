@@ -1,7 +1,6 @@
 local _, MakuluFramework = ...
 MakuluFramework = MakuluFramework or _G.MakuluFramwork
 
-local pairs = pairs
 
 local thanksJack = {
     [0x03] = "F",
@@ -101,7 +100,7 @@ function shouldPause(binds)
         end 
     end
 
-    --
+    --TINKR
     for key, value in pairs(thanksJack) do
         if GetKeyState(key) then
             if not isBindInTable(value, binds) then 

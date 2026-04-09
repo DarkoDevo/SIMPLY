@@ -1,0 +1,44 @@
+## Interface: 120000
+## Title: Makulu Framework
+## Notes: Core runtime for Makulu rotations. Rotations are still exported separately for TellMeWhen.
+## Author: Makulu
+## Version: 1.0.0
+## OptionalDeps: TellMeWhen, Action
+
+Base.lua
+ExternalLibs\LibStub\LibStub.lua
+ExternalLibs\LibRangeCheck-2.0.lua
+Core\DataStructures\LinkedTable.lua
+Core\DataStructures\KDTree.lua
+ExternalLibs\DrList\DrList.lua
+ExternalLibs\DrList\Spells.lua
+Cache.lua
+UI.lua
+Core\Commands.lua
+Lists.lua
+Core\Frame.lua
+Core\Events.lua
+Core\DrTracker.lua
+DamageTracker.lua
+Unit.lua
+ConstUnits.lua
+UnitPve.lua
+UnitPvp.lua
+Utils.lua
+Spell.lua
+MultiUnits.lua
+ArenaState.lua
+World.lua
+Root.lua
+Makulu_Globals.lua
+MakuluLGlobals.lua
+Events\UnitCdTracker.lua
+Modules\Chat.lua
+Modules\MakuluFakeCast.lua
+Modules\MakuluPMult.lua
+Modules\SpecListener.lua
+BossMods.lua
+Sequence.lua
+NamePlater.lua
+GglAllTheUnits.lua
+Events\LockoutTracker.lua

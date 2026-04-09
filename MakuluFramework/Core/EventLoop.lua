@@ -1,4 +1,4 @@
-local MakuluFramework = ...
+local Tinkr, MakuluFramework = ...
 
 local STOPPED                = 0;
 local RUNNING                = 1;
@@ -11,6 +11,13 @@ local loopStatus             = STOPPED;
 local GetNetStats            = GetNetStats
 local SetCVar                = SetCVar
 
+local Draw                   = Tinkr.Util.Draw:New()
+
+Draw:Sync(function(draw)
+    if not currentDraw then return end
+
+    return currentDraw(draw)
+end)
 
 local success, message
 local time = _G.debugprofilestop

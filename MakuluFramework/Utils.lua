@@ -1,12 +1,6 @@
-local MakuluFramework         = _G.MakuluFramework
-local Action                  = nil
-
-local function getAction()
-    if Action == nil then
-        Action = _G.Action
-    end
-    return Action
-end
+local _, MakuluFramework      = ...
+MakuluFramework               = MakuluFramework or _G.MakuluFramework
+local Action           = _G.Action
 
 local ConstUnit        = MakuluFramework.ConstUnits
 local cacheContext     = MakuluFramework.Cache
@@ -352,7 +346,7 @@ function TrinketAnalyzer:IsActionBlocked(slot)
         return true
     end
 
-    return not getAction().GetToggle(1, "Trinkets")[toggleIndex]
+    return not Action.GetToggle(1, "Trinkets")[toggleIndex]
 end
 
 function TrinketAnalyzer:GetCooldown(slot)
@@ -689,19 +683,12 @@ MakuluFramework.TrinketMagicTime = function()
     return trinketDefTimeLeft(smallerMagicTrinketDef)
 end
 
-local ActionUnit       = nil
-local MultiUnits       = nil
+local ActionUnit       = Action.Unit
+local MultiUnits       = Action.MultiUnits
 local MakUnit          = nil
 local plates           = nil
 
 local function TauntStatus(tauntSpell, autoTauntToggle)
-    local act = getAction()
-    if ActionUnit == nil then
-        ActionUnit = act.Unit
-    end
-    if MultiUnits == nil then
-        MultiUnits = act.MultiUnits
-    end
     if plates == nil then
         plates = MakuluFramework.Plates.load()
     end
@@ -712,7 +699,7 @@ local function TauntStatus(tauntSpell, autoTauntToggle)
         autoTauntToggle = "autotaunt"
     end
 
-    if IsInRaid() or not act.GetToggle(2, autoTauntToggle) then return "None" end
+    if IsInRaid() or not Action.GetToggle(2, autoTauntToggle) then return "None" end
 
     local activeEnemies = MultiUnits:GetActiveUnitPlates()
     local needToSwitch = false
@@ -720,7 +707,7 @@ local function TauntStatus(tauntSpell, autoTauntToggle)
 
     for unitToCheck in pairs(activeEnemies) do
         local munit = MakUnit:new(unitToCheck)
-        if munit and munit.exists and plates[munit.guid] and tauntSpell:InRange(munit) and not act.IsInPvP and not munit:IsTotem() and not munit:IsDummy() and munit.inCombat then
+        if munit and munit.exists and plates[munit.guid] and tauntSpell:InRange(munit) and not Action.IsInPvP and not munit:IsTotem() and not munit:IsDummy() and munit.inCombat then
             local threatStatusE = UnitThreatSituation("player", munit:CallerId())
             local threatStatusT = UnitThreatSituation("player", "target")
             if threatStatusE == 0 or threatStatusE == 2 then
@@ -866,7 +853,7 @@ end
 MakuluFramework.NeedRaidBuff = function(buffSpellRow)
     if player.inCombat then return end
 
-    if getAction().Zone == "arena" and player.combatTime > 0 then return end
+    if Action.Zone == "arena" and player.combatTime > 0 then return end
 
     local missingBuff = MakuluFramework.MultiUnits.party:Any(function(unit) return not unit:Buff(buffSpellRow.wowName) and unit.distance < 40 and not unit.isPet and unit.hp > 0 end)
     local outOfRange = MakuluFramework.MultiUnits.party:Any(function(unit) return unit.distance >= 40 or C_Map.GetBestMapForUnit(player:CallerId()) ~= C_Map.GetBestMapForUnit(unit:CallerId()) end)

@@ -884,6 +884,7 @@ lists.DPSCooldownList = arrayToLuT({
         288853, -- Raise Abomination
         275699, -- Apocalypse
         63560,  -- Dark Transformation
+        1233448, -- Dark Transformation (current)
         
         --Demon Hunter
         191427, -- Metamorphosis
@@ -988,6 +989,7 @@ lists.MagicCds = arrayToLuT({
         49206,  -- Summon Gargoyle (Shadow)
         275699, -- Apocalypse (Shadow)
         63560,  -- Dark Transformation (Shadow)
+        1233448, -- Dark Transformation (Shadow, current)
         
         --Demon Hunter
         258860, -- Essence Break (Fire, Nature, Frost, Shadow, Arcane)
@@ -1071,6 +1073,7 @@ lists.Disarm = {
     [288853] = true, -- Raise Abomination
     [275699] = true, -- Apocalypse
     [63560] = true,  -- Dark Transformation
+    [1233448] = true, -- Dark Transformation (current)
     
     
     --Demon Hunter

@@ -1,10 +1,34 @@
-if not MakuluFramework then
-    MakuluFramework = {
-        NAME = "Makulu"
-    }
+local addonName, addonTable = ...
+local existingFramework = rawget(_G, "MakuluFramework")
+local sharedFramework = addonTable
 
-    MakuluFramwork = MakuluFramework
+if type(sharedFramework) == "table" and type(existingFramework) == "table" and existingFramework ~= sharedFramework then
+    for key, value in pairs(existingFramework) do
+        if sharedFramework[key] == nil then
+            sharedFramework[key] = value
+        end
+    end
+elseif type(sharedFramework) ~= "table" then
+    sharedFramework = existingFramework
 end
+
+if type(sharedFramework) ~= "table" then
+    sharedFramework = {
+        NAME = "Makulu",
+    }
+end
+
+if type(sharedFramework.NAME) ~= "string" or sharedFramework.NAME == "" then
+    sharedFramework.NAME = "Makulu"
+end
+
+if type(addonName) == "string" and addonName ~= "" then
+    sharedFramework.ADDON_NAME = addonName
+end
+
+_G.MakuluFramework = sharedFramework
+_G.MakuluFramwork = sharedFramework
+MakuluFramework = sharedFramework
 
 
 -- Compatibility shim to ensure _G.debugprofilestop exists (Classic/MoP)
