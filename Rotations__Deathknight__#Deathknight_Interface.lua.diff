@@ -1,0 +1,38 @@
+--- a/Rotations/Deathknight/#Deathknight_Interface.lua
++++ b/Rotations/Deathknight/#Deathknight_Interface.lua
+@@ -743,6 +743,35 @@
+ {{ E = "LayoutSpace", },},
+ {{E = "Header", L = { ANY = "=== [ Pulse Managed ] ===", },},},
+ -- PULSE_UI_START: ACTION_CONST_DEATHKNIGHT_UNHOLY
++            {
++                {
++                    E = "Checkbox",
++                    DB = "HoldMajorBurstIntoWalls",
++                    DBV = true,
++                    L = {
++                        enUS = "Hold major burst into enemy walls",
++                    },
++                    TT = {
++                        enUS = "If enabled, major Unholy burst cooldowns are delayed while the enemy is inside broad defensive or immunity windows.",
++                    },
++                    M = {},
++                },
++                {
++                    E = "Slider",
++                    MIN = -1,
++                    MAX = 100,
++                    DB = "HoldMajorBurstEnemyHP",
++                    DBV = 55,
++                    ONLYOFF = true,
++                    L = {
++                        ANY = "Hold burst above enemy HP (%)"
++                    },
++                    TT = {
++                        ANY = "If the target is at or below this health, burst is allowed even if a broad defensive window is detected. Set -1 to always hold into detected walls."
++                    },
++                    M = {},
++                },
++            },
+ -- PULSE_UI_END: ACTION_CONST_DEATHKNIGHT_UNHOLY
+             {
+                 {

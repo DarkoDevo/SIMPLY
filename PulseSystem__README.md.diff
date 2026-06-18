@@ -1,0 +1,27 @@
+--- a/PulseSystem/README.md
++++ b/PulseSystem/README.md
+@@ -66,3 +66,24 @@
+ - This first version is intentionally conservative.
+ - It is safest for anchored insertions and targeted text replacements.
+ - For deep combat logic changes, prefer anchor blocks over broad regex edits.
++
++## Burst-hold awareness lane
++
++The bootstrap now includes a second pulse lane for on-screen awareness messages.
++
++### New pulse-managed UI controls
++- `HoldMajorBurstIntoWalls`
++- `HoldMajorBurstEnemyHP`
++- `PulseExplainBurstHolds`
++- `PulseBurstHoldMessageThrottle`
++
++### New helper behavior
++- Detect broad enemy immunity or wall windows
++- Hold major burst cooldowns during those windows
++- Show a Makulu awareness message explaining why burst is being held
++- Throttle repeated messages so they do not spam
++
++### Example pulse
++```bash
++python PulseSystem/scripts/process_pulse.py PulseSystem/samples/002_explain_major_burst_holds.json
++```

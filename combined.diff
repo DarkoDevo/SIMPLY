@@ -1,0 +1,150 @@
+--- a/Rotations/Deathknight/#Deathknight_Interface.lua
++++ b/Rotations/Deathknight/#Deathknight_Interface.lua
+@@ -743,6 +743,35 @@
+ {{ E = "LayoutSpace", },},
+ {{E = "Header", L = { ANY = "=== [ Pulse Managed ] ===", },},},
+ -- PULSE_UI_START: ACTION_CONST_DEATHKNIGHT_UNHOLY
++            {
++                {
++                    E = "Checkbox",
++                    DB = "HoldMajorBurstIntoWalls",
++                    DBV = true,
++                    L = {
++                        enUS = "Hold major burst into enemy walls",
++                    },
++                    TT = {
++                        enUS = "If enabled, major Unholy burst cooldowns are delayed while the enemy is inside broad defensive or immunity windows.",
++                    },
++                    M = {},
++                },
++                {
++                    E = "Slider",
++                    MIN = -1,
++                    MAX = 100,
++                    DB = "HoldMajorBurstEnemyHP",
++                    DBV = 55,
++                    ONLYOFF = true,
++                    L = {
++                        ANY = "Hold burst above enemy HP (%)"
++                    },
++                    TT = {
++                        ANY = "If the target is at or below this health, burst is allowed even if a broad defensive window is detected. Set -1 to always hold into detected walls."
++                    },
++                    M = {},
++                },
++            },
+ -- PULSE_UI_END: ACTION_CONST_DEATHKNIGHT_UNHOLY
+             {
+                 {
+
+--- a/Rotations/Deathknight/Deathknight_Unholy.lua
++++ b/Rotations/Deathknight/Deathknight_Unholy.lua
+@@ -327,6 +327,33 @@
+ --Specified Kick function depending on damage type (Physical)
+ 
+ -- PULSE_RULES_START: ACTION_CONST_DEATHKNIGHT_UNHOLY_HELPERS
++local function PulseEnemyDefensiveWallActive(unitID)
++    if not Unit(unitID):IsExists() then
++        return false
++    end
++
++    return Unit(unitID):IsBuffUp(Full_Immune_Buffs)
++        or Unit(unitID):IsBuffUp(Phys_Immune_Buffs)
++        or Unit(unitID):IsBuffUp(Magic_Immune_Buffs)
++        or Unit(unitID):IsBuffUp(AMS_Bufftable)
++end
++
++local function PulseShouldHoldMajorBurst(unitID)
++    if not GetToggle(2, "HoldMajorBurstIntoWalls") then
++        return false
++    end
++
++    if not Unit(unitID):IsExists() then
++        return false
++    end
++
++    local hpGate = GetToggle(2, "HoldMajorBurstEnemyHP")
++    if hpGate ~= nil and hpGate >= 0 and Unit(unitID):HealthPercent() <= hpGate then
++        return false
++    end
++
++    return PulseEnemyDefensiveWallActive(unitID)
++end
+ -- PULSE_RULES_END: ACTION_CONST_DEATHKNIGHT_UNHOLY_HELPERS
+ local function CanKickArenaPhysical(unitID)
+     local raceCar = GetToggle(2, "RaceCar")
+@@ -793,7 +820,8 @@
+     
+     local function Cooldowns()
+         -- PULSE_HOLDS_START: ACTION_CONST_DEATHKNIGHT_UNHOLY_COOLDOWNS
+-        -- PULSE_HOLDS_END: ACTION_CONST_DEATHKNIGHT_UNHOLY_COOLDOWNS
++        local holdMajorBurstNow = PulseShouldHoldMajorBurst(unitID)
++-- PULSE_HOLDS_END: ACTION_CONST_DEATHKNIGHT_UNHOLY_COOLDOWNS
+         
+         local activeDarkTransformation = (A.DarkTransformation:GetSpellTimeSinceLastCast() < 15)
+         local readyDarkTransformation = (A.DarkTransformation:GetCooldown() == 0 or not A.DarkTransformation:IsTalentLearned())
+@@ -801,40 +829,40 @@
+         
+         if GetToggle(2, "Checkbox4") then
+             --ArmyoftheDead
+-            if A.ArmyoftheDead:IsReadyByPassCastGCD() and not A.RaiseAbomination:IsTalentLearned() and readyApocalypse then return A.ArmyoftheDead:Show(icon) end
++            if A.ArmyoftheDead:IsReadyByPassCastGCD() and not A.RaiseAbomination:IsTalentLearned() and readyApocalypse and not holdMajorBurstNow then return A.ArmyoftheDead:Show(icon) end
+             
+             --EmpowerRuneWeapon
+-            if A.EmpowerRuneWeapon:IsReadyByPassCastGCD() and readyApocalypse then return A.EmpowerRuneWeapon:Show(icon) end
++            if A.EmpowerRuneWeapon:IsReadyByPassCastGCD() and readyApocalypse and not holdMajorBurstNow then return A.EmpowerRuneWeapon:Show(icon) end
+             
+             --AbominationLimb
+-            if A.AbominationLimb:IsReadyByPassCastGCD() and A.AbominationLimb:IsTalentLearned() and CanAttackTargetMagical(unitID) and Unit(unitID):GetRange() <= 5 and readyApocalypse then return A.AbominationLimb:Show(icon) end
++            if A.AbominationLimb:IsReadyByPassCastGCD() and A.AbominationLimb:IsTalentLearned() and CanAttackTargetMagical(unitID) and Unit(unitID):GetRange() <= 5 and readyApocalypse and not holdMajorBurstNow then return A.AbominationLimb:Show(icon) end
+             
+             --SummonGargoyle
+-            if A.SummonGargoyle:IsReadyByPassCastGCD() and readyApocalypse then return A.SummonGargoyle:Show(icon) end
++            if A.SummonGargoyle:IsReadyByPassCastGCD() and readyApocalypse and not holdMajorBurstNow then return A.SummonGargoyle:Show(icon) end
+             
+             --RaiseAbomination
+-            if A.RaiseAbomination:IsReadyByPassCastGCD() and A.RaiseAbomination:IsTalentLearned() and tempSpellCooldown(A.RaiseAbomination.ID) < .3 and Unit(unitID):GetRange() <= 5 and readyApocalypse then return A.RaiseAbomination:Show(icon) end
++            if A.RaiseAbomination:IsReadyByPassCastGCD() and A.RaiseAbomination:IsTalentLearned() and tempSpellCooldown(A.RaiseAbomination.ID) < .3 and Unit(unitID):GetRange() <= 5 and readyApocalypse and not holdMajorBurstNow then return A.RaiseAbomination:Show(icon) end
+             
+             --DarkTransformation
+             if A.DarkTransformation:IsReadyByPassCastGCD() and not A.Apocalypse:IsTalentLearned() and UnitExists("pet") and Unit("pet"):HealthPercent() > 0 then return A.DarkTransformation:Show(icon) end
+             
+             --UnholyAssault
+-            if A.UnholyAssault:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and readyApocalypse and FesterStacks <= 3 then return A.UnholyAssault:Show(icon) end
++            if A.UnholyAssault:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and readyApocalypse and FesterStacks <= 3 and not holdMajorBurstNow then return A.UnholyAssault:Show(icon) end
+             
+             --Apocalypse
+-            if A.Apocalypse:IsReadyByPassCastGCD() and A.Apocalypse:IsTalentLearned() and CanAttackTargetMagical(unitID) and FesterStacks >= 1 then return A.Apocalypse:Show(icon) end
++            if A.Apocalypse:IsReadyByPassCastGCD() and A.Apocalypse:IsTalentLearned() and CanAttackTargetMagical(unitID) and FesterStacks >= 1 and not holdMajorBurstNow then return A.Apocalypse:Show(icon) end
+         else
+             --ArmyoftheDead
+-            if A.ArmyoftheDead:IsReadyByPassCastGCD() and not A.RaiseAbomination:IsTalentLearned() and readyApocalypse then return A.ArmyoftheDead:Show(icon) end
++            if A.ArmyoftheDead:IsReadyByPassCastGCD() and not A.RaiseAbomination:IsTalentLearned() and readyApocalypse and not holdMajorBurstNow then return A.ArmyoftheDead:Show(icon) end
+             
+             --EmpowerRuneWeapon
+-            if A.EmpowerRuneWeapon:IsReadyByPassCastGCD() and readyApocalypse then return A.EmpowerRuneWeapon:Show(icon) end
++            if A.EmpowerRuneWeapon:IsReadyByPassCastGCD() and readyApocalypse and not holdMajorBurstNow then return A.EmpowerRuneWeapon:Show(icon) end
+             
+             --AbominationLimb
+-            if A.AbominationLimb:IsReadyByPassCastGCD() and A.AbominationLimb:IsTalentLearned() and CanAttackTargetMagical(unitID) and Unit(unitID):GetRange() <= 5 and readyApocalypse then return A.AbominationLimb:Show(icon) end
++            if A.AbominationLimb:IsReadyByPassCastGCD() and A.AbominationLimb:IsTalentLearned() and CanAttackTargetMagical(unitID) and Unit(unitID):GetRange() <= 5 and readyApocalypse and not holdMajorBurstNow then return A.AbominationLimb:Show(icon) end
+             
+             --SummonGargoyle
+-            if A.SummonGargoyle:IsReadyByPassCastGCD() and readyApocalypse then return A.SummonGargoyle:Show(icon) end
++            if A.SummonGargoyle:IsReadyByPassCastGCD() and readyApocalypse and not holdMajorBurstNow then return A.SummonGargoyle:Show(icon) end
+             
+             --DarkTransformation | UnholyBlight
+             if A.DarkTransformation:IsReadyByPassCastGCD() and not A.Apocalypse:IsTalentLearned() and UnitExists("pet") and Unit("pet"):HealthPercent() > 0 then return A.DarkTransformation:Show(icon) end
+@@ -843,10 +871,10 @@
+             --if A.UnholyBlight:IsReadyByPassCastGCD() and CanAttackTargetMagical(unitID) and Unit(unitID):IsBuffDown(Magic_Immune_UnholyBlight) and IsInMeleeRange then return A.UnholyBlight:Show(icon) end (depreciated)
+             
+             --UnholyAssault
+-            if A.UnholyAssault:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and readyApocalypse and FesterStacks <= 3 then return A.UnholyAssault:Show(icon) end
++            if A.UnholyAssault:IsReadyByPassCastGCD(unitID) and CanAttackTargetMagical(unitID) and readyApocalypse and FesterStacks <= 3 and not holdMajorBurstNow then return A.UnholyAssault:Show(icon) end
+             
+             --Apocalypse
+-            if A.Apocalypse:IsReadyByPassCastGCD() and A.Apocalypse:IsTalentLearned() and CanAttackTargetMagical(unitID) and FesterStacks >= GetToggle(2, "FesterStacksSlider") then return A.Apocalypse:Show(icon) end
++            if A.Apocalypse:IsReadyByPassCastGCD() and A.Apocalypse:IsTalentLearned() and CanAttackTargetMagical(unitID) and FesterStacks >= GetToggle(2, "FesterStacksSlider") and not holdMajorBurstNow then return A.Apocalypse:Show(icon) end
+         end
+     end
+     

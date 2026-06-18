@@ -1,0 +1,45 @@
+--- a/PulseSystem/adopted_helpers/legacy_legacy_api_and_suggestions_001_prefer_safe_cooldown_detection_fallbacks.lua
++++ b/PulseSystem/adopted_helpers/legacy_legacy_api_and_suggestions_001_prefer_safe_cooldown_detection_fallbacks.lua
+@@ -0,0 +1,42 @@
++-- Auto-generated helper draft from pulse library
++-- record_id: legacy_legacy_api_and_suggestions_001_prefer_safe_cooldown_detection_fallbacks
++-- title: Prefer safe cooldown detection fallbacks
++-- scope: deathknight_unholy
++-- summary: When cooldown APIs differ or protected reads become unreliable, use a ranked fallback chain and preserve addon behavior.
++-- NOTE: this file is a draft helper lane and is not wired into the live rotation automatically.
++
++-- Preferred APIs: A.GetSpellCooldown, Action.GetToggle, A_IsReady
++-- Avoid APIs: GetSpellCooldown, C_Spell.GetSpellCooldown
++-- Fallback chain: A.GetSpellCooldown -> Action.GetToggle -> cached_last_known_cooldown -> broad_safe_prediction
++
++local PulseAPI = PulseAPI or {}
++
++function PulseAPI.GetCooldownSafe(spell, cacheKey, state)
++    if not spell then
++        return nil, 'missing_spell'
++    end
++
++    -- Lane 1: framework helper wrappers should go here first.
++    if type(A) == 'table' and type(A.GetSpellCooldown) == 'function' then
++        local ok, value = pcall(A.GetSpellCooldown, spell)
++        if ok and value ~= nil then
++            return value, 'A.GetSpellCooldown'
++        end
++    end
++
++    -- Lane 2: project-specific safe toggles or wrappers.
++    if type(Action) == 'table' and type(Action.GetToggle) == 'function' and cacheKey then
++        local ok, value = pcall(Action.GetToggle, 1, cacheKey)
++        if ok and value ~= nil then
++            return value, 'Action.GetToggle'
++        end
++    end
++
++    -- Lane 3: cached state if the safe helpers drift or disappear.
++    if type(state) == 'table' and cacheKey and state[cacheKey] ~= nil then
++        return state[cacheKey], 'cached_last_known_cooldown'
++    end
++
++    -- Lane 4: broad-safe prediction fallback for degraded environments.
++    return nil, 'broad_safe_prediction'
++end

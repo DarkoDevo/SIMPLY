@@ -1,0 +1,8 @@
+antlr4-python3-runtime==4.7.2
+luaparser @ git+https://github.com/boolangery/py-lua-parser@17ae223e7be6af43edb0ef124034659e57205cfc
+multimethod==1.9.1
+watchdog==3.0.0
+pathlib==1.0.1
+more_itertools==10.1.0
+typo==0.1.5
+configparser==6.0.0

@@ -1,0 +1,31 @@
+--- a/PulseSystem/samples/002_explain_major_burst_holds.json
++++ b/PulseSystem/samples/002_explain_major_burst_holds.json
+@@ -0,0 +1,28 @@
++{
++  "pulse_id": "002_explain_major_burst_holds",
++  "spec": "deathknight_unholy",
++  "summary": "Add pulse-driven awareness messages for held major burst windows, plus UI toggles to control message visibility and throttle.",
++  "operations": [
++    {
++      "type": "replace_between_markers",
++      "file": "Rotations/Deathknight/Deathknight_Unholy.lua",
++      "start_marker": "PULSE_RULES_START: ACTION_CONST_DEATHKNIGHT_UNHOLY_HELPERS",
++      "end_marker": "PULSE_RULES_END: ACTION_CONST_DEATHKNIGHT_UNHOLY_HELPERS",
++      "content": "local pulseRuntime = {\n    lastMajorBurstHoldMessageAt = 0,\n}\n\nlocal function PulseEnemyDefensiveWallActive(unitID)\n    if not Unit(unitID):IsExists() then\n        return false\n    end\n\n    return Unit(unitID):IsBuffUp(Full_Immune_Buffs)\n        or Unit(unitID):IsBuffUp(Phys_Immune_Buffs)\n        or Unit(unitID):IsBuffUp(Magic_Immune_Buffs)\n        or Unit(unitID):IsBuffUp(AMS_Bufftable)\nend\n\nlocal function PulseGetMajorBurstHoldReason(unitID)\n    if not Unit(unitID):IsExists() then\n        return nil\n    end\n\n    if Unit(unitID):IsBuffUp(Full_Immune_Buffs) then\n        return \"enemy immunity is active\"\n    end\n\n    if Unit(unitID):IsBuffUp(AMS_Bufftable) then\n        return \"anti-magic protection is active\"\n    end\n\n    if Unit(unitID):IsBuffUp(Phys_Immune_Buffs) or Unit(unitID):IsBuffUp(Magic_Immune_Buffs) then\n        return \"enemy defensive wall is active\"\n    end\n\n    return nil\nend\n\nlocal function PulseShouldHoldMajorBurst(unitID)\n    if not GetToggle(2, \"HoldMajorBurstIntoWalls\") then\n        return false\n    end\n\n    if not Unit(unitID):IsExists() then\n        return false\n    end\n\n    local hpGate = GetToggle(2, \"HoldMajorBurstEnemyHP\")\n    if hpGate ~= nil and hpGate >= 0 and Unit(unitID):HealthPercent() <= hpGate then\n        return false\n    end\n\n    return PulseEnemyDefensiveWallActive(unitID)\nend\n\nlocal function PulseShowMajorBurstHoldMessage(unitID)\n    if not GetToggle(2, \"PulseExplainBurstHolds\") then\n        return\n    end\n\n    if not PulseShouldHoldMajorBurst(unitID) then\n        return\n    end\n\n    if not Aware or not Aware.displayMessage then\n        return\n    end\n\n    local now = GetTime()\n    local throttle = GetToggle(2, \"PulseBurstHoldMessageThrottle\") or 2\n    if pulseRuntime.lastMajorBurstHoldMessageAt and (now - pulseRuntime.lastMajorBurstHoldMessageAt) < throttle then\n        return\n    end\n\n    local reason = PulseGetMajorBurstHoldReason(unitID) or \"enemy defensive window is active\"\n    local targetName = UnitName(unitID) or \"target\"\n    local message = string.format(\"Holding major burst on %s because %s.\", targetName, reason)\n    pulseRuntime.lastMajorBurstHoldMessageAt = now\n    Aware:displayMessage(message, \"DeathKnight\", throttle, GetSpellTexture(A.Apocalypse.ID), true)\nend"
++    },
++    {
++      "type": "replace_between_markers",
++      "file": "Rotations/Deathknight/Deathknight_Unholy.lua",
++      "start_marker": "PULSE_HOLDS_START: ACTION_CONST_DEATHKNIGHT_UNHOLY_COOLDOWNS",
++      "end_marker": "PULSE_HOLDS_END: ACTION_CONST_DEATHKNIGHT_UNHOLY_COOLDOWNS",
++      "content": "        local holdMajorBurstNow = PulseShouldHoldMajorBurst(unitID)\n        if holdMajorBurstNow then\n            PulseShowMajorBurstHoldMessage(unitID)\n        end"
++    },
++    {
++      "type": "replace_between_markers",
++      "file": "Rotations/Deathknight/#Deathknight_Interface.lua",
++      "start_marker": "PULSE_UI_START: ACTION_CONST_DEATHKNIGHT_UNHOLY",
++      "end_marker": "PULSE_UI_END: ACTION_CONST_DEATHKNIGHT_UNHOLY",
++      "content": "            {\n                {\n                    E = \"Checkbox\",\n                    DB = \"HoldMajorBurstIntoWalls\",\n                    DBV = true,\n                    L = {\n                        enUS = \"Hold major burst into enemy walls\",\n                    },\n                    TT = {\n                        enUS = \"If enabled, major Unholy burst cooldowns are delayed while the enemy is inside broad defensive or immunity windows.\",\n                    },\n                    M = {},\n                },\n                {\n                    E = \"Slider\",\n                    MIN = -1,\n                    MAX = 100,\n                    DB = \"HoldMajorBurstEnemyHP\",\n                    DBV = 55,\n                    ONLYOFF = true,\n                    L = {\n                        ANY = \"Hold burst above enemy HP (%)\"\n                    },\n                    TT = {\n                        ANY = \"If the target is at or below this health, burst is allowed even if a broad defensive window is detected. Set -1 to always hold into detected walls.\"\n                    },\n                    M = {},\n                },\n                {\n                    E = \"Checkbox\",\n                    DB = \"PulseExplainBurstHolds\",\n                    DBV = true,\n                    L = {\n                        enUS = \"Show pulse messages for burst holds\",\n                    },\n                    TT = {\n                        enUS = \"Shows an on-screen Makulu message when major burst is being held because an enemy defensive or immunity window is detected.\",\n                    },\n                    M = {},\n                },\n                {\n                    E = \"Slider\",\n                    MIN = 1,\n                    MAX = 10,\n                    DB = \"PulseBurstHoldMessageThrottle\",\n                    DBV = 2,\n                    ONLYOFF = true,\n                    L = {\n                        ANY = \"Burst hold message throttle (sec)\"\n                    },\n                    TT = {\n                        ANY = \"Minimum time between repeated pulse burst-hold messages. Higher values reduce spam.\"\n                    },\n                    M = {},\n                },\n            },"
++    }
++  ]
++}

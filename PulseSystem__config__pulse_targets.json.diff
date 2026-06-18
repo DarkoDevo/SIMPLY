@@ -1,0 +1,21 @@
+--- a/PulseSystem/config/pulse_targets.json
++++ b/PulseSystem/config/pulse_targets.json
+@@ -2,15 +2,15 @@
+   "targets": {
+     "dk_unholy_rotation": {
+       "file": "Rotations/Deathknight/Deathknight_Unholy.lua",
+-      "notes": "Primary Unholy rotation file. Safe pulse anchor regions exist for helper functions and cooldown hold logic."
++      "notes": "Primary Unholy rotation file. Safe pulse anchor regions exist for helper functions, cooldown hold logic, and awareness messaging."
+     },
+     "dk_unholy_ui": {
+       "file": "Rotations/Deathknight/#Deathknight_Interface.lua",
+-      "notes": "Primary Unholy UI/options file. Safe pulse UI insertion anchor exists near the end of the Unholy panel."
++      "notes": "Primary Unholy UI/options file. Safe pulse UI insertion anchor exists near the end of the Unholy panel and supports pulse-managed controls/messages."
+     },
+     "dk_profile_bundle": {
+       "file": "AutoBundle/Profiles/DeathKnight.json",
+       "notes": "AutoBundle profile used when packing the Death Knight profile."
+     }
+   }
+-}
++}

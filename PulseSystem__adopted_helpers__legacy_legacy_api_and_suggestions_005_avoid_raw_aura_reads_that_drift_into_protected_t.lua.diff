@@ -1,0 +1,40 @@
+--- a/PulseSystem/adopted_helpers/legacy_legacy_api_and_suggestions_005_avoid_raw_aura_reads_that_drift_into_protected_t.lua
++++ b/PulseSystem/adopted_helpers/legacy_legacy_api_and_suggestions_005_avoid_raw_aura_reads_that_drift_into_protected_t.lua
+@@ -0,0 +1,37 @@
++-- Auto-generated helper draft from pulse library
++-- record_id: legacy_legacy_api_and_suggestions_005_avoid_raw_aura_reads_that_drift_into_protected_t
++-- title: Avoid raw aura reads that drift into protected territory
++-- scope: deathknight_unholy
++-- summary: Prefer framework aura wrappers and cached state over direct aura scans when reliability changes between patches.
++-- NOTE: this file is a draft helper lane and is not wired into the live rotation automatically.
++
++-- Preferred APIs: A_Unit(unitID):HasBuffs, A_Unit(unitID):HasDeBuffs, GetByRange
++-- Avoid APIs: UnitAura, AuraUtil.FindAuraByName
++-- Fallback chain: A_Unit(unitID):HasBuffs -> cached_arena_state -> broad_safe_prediction
++
++local PulseAPI = PulseAPI or {}
++
++function PulseAPI.UnitHasBuffSafe(unitID, auraName, cacheState)
++    if not unitID or not auraName then
++        return false, 'missing_unit_or_aura'
++    end
++
++    -- Lane 1: framework wrappers first.
++    if type(A_Unit) == 'function' then
++        local ok, unitObj = pcall(A_Unit, unitID)
++        if ok and unitObj and type(unitObj.HasBuffs) == 'function' then
++            local hit = unitObj:HasBuffs(auraName, true)
++            if hit and hit > 0 then
++                return true, 'A_Unit(unitID):HasBuffs'
++            end
++        end
++    end
++
++    -- Lane 2: cached state maintained elsewhere by safe scans.
++    if type(cacheState) == 'table' and type(cacheState[unitID]) == 'table' and cacheState[unitID][auraName] then
++        return true, 'cached_arena_state'
++    end
++
++    -- Lane 3: broad-safe prediction fallback.
++    return false, 'broad_safe_prediction'
++end
